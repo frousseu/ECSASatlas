@@ -98,23 +98,23 @@ states <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="n
 world<-world[1344,]
 
 
-#usa<-na[sort(unique(c((1:nrow(na))[na$NAME%in%c("Quebec / QuÃ©bec","Nova Scotia / Nouvelle-Ã???cosse","Nunavut","Newfoundland and Labrador / Terre-Neuve-et-Labrador","New Brunswick / Nouveau-Brunswick","Prince Edward Island / ÃZle-du-Prince-Ã???douard","Vermont","New Hampshire","New York","Maine","Massachusetts","Rhode Island","Delaware")],grep("Scotia|Prince",na$NAME)))) ,]
+#usa<-na[sort(unique(c((1:nrow(na))[na$NAME%in%c("Quebec / QuÃ©bec","Nova Scotia / Nouvelle-????cosse","Nunavut","Newfoundland and Labrador / Terre-Neuve-et-Labrador","New Brunswick / Nouveau-Brunswick","Prince Edward Island / ?Zle-du-Prince-????douard","Vermont","New Hampshire","New York","Maine","Massachusetts","Rhode Island","Delaware")],grep("Scotia|Prince",na$NAME)))) ,]
 
 #db<-odbcConnectAccess2007(paste(pathECSAS,fileECSAS,sep="/"))
-#obs<-sqlFetch(db,"tblSighting",as.is=TRUE) #ça plante et ne sait pas pourquoi
+#obs<-sqlFetch(db,"tblSighting",as.is=TRUE) #?a plante et ne sait pas pourquoi
 #odbcClose(db)
 
 #db<-odbcConnectAccess2007(paste(pathECSAS,fileECSAS,sep="/"))
-#sp<-sqlFetch(db,"tblSpeciesInfo",as.is=TRUE) #ça plante et ne sait pas pourquoi
+#sp<-sqlFetch(db,"tblSpeciesInfo",as.is=TRUE) #?a plante et ne sait pas pourquoi
 #sp<-unique(sp$Alpha[sp$Class=="Bird"])
 #odbcClose(db)
 
 #db<-odbcConnectAccess2007(paste(pathECSAS,fileECSAS,sep="/"))
-#watch<-sqlFetch(db,"tblWatch",as.is=TRUE) #ça plante et ne sait pas pourquoi
+#watch<-sqlFetch(db,"tblWatch",as.is=TRUE) #?a plante et ne sait pas pourquoi
 #odbcClose(db)
 
 #db<-odbcConnectAccess2007(paste(pathECSAS,fileECSAS,sep="/"))
-#cruise<-sqlFetch(db,"tblCruise",as.is=TRUE) #ça plante et ne sait pas pourquoi
+#cruise<-sqlFetch(db,"tblCruise",as.is=TRUE) #?a plante et ne sait pas pourquoi
 #odbcClose(db)
 
 
@@ -145,7 +145,7 @@ terre<-municip.shp[!is.na(municip.shp$MUS_NM_MUN),]
 
 ### replace french names
 db<-odbcConnectAccess2007("C:/Users/User/Documents/SCF2016_FR/ECSASdata/SOMEC-QC.accdb")
-qc<-sqlFetch(db,"Code espèces",as.is=TRUE)
+qc<-sqlFetch(db,"Code espÃ¨ces",as.is=TRUE)
 odbcClose(db)
 bn<-c("foba","fubo","fulm","GOAC","goar","guma","LALQ","LIMICOLESP","OCWL","PATC","PLON","RAZO","rien","SCSP")
 gn<-c("FOBA","FUBO","FULM","GOAC","GOAR","GUMA","LALQ","LIMICOLESP","OCWI","PATC","PLON","PEPI","RIEN","SCSP")
@@ -153,7 +153,7 @@ m<-match(addQC$Alpha,bn)
 addQC$Alpha<-ifelse(is.na(m),addQC$Alpha,gn[m])
 m<-match(addQC$Alpha,qc$CodeFR)
 addQC$Alpha<-ifelse(is.na(m),ifelse(addQC$Alpha%in%c("RIEN"),addQC$Alpha,NA),qc$CodeAN[m])
-addQC$add<-1 # pour vérifier les lignes restantes à la fin
+addQC$add<-1 # pour v?rifier les lignes restantes ? la fin
 addQC$Date<-ifelse(is.na(addQC$Date),substr(addQC$StartTime,1,10),addQC$Date)
 
 data(quebec)
@@ -167,7 +167,7 @@ dl<-c("A","B","C","D","c")
 dn<-c("25","75","150","250","150")
 m<-match(d$Distance,dl)
 d$Distance<-ifelse(is.na(m),d$Distance,dn[m])
-d<-d[which(d$LongStart>(-150) & d$LongStart<(-18)),] ### j'enlève la croisière partant vers l'uerope car créer des distortions dans les projections
+d<-d[which(d$LongStart>(-150) & d$LongStart<(-18)),] ### j'enl?ve la croisi?re partant vers l'uerope car cr?er des distortions dans les projections
 d<-d[which(d$LatStart>(0) & d$LatStart<(90)),]
 #d<-d[d$WatchLenKm>0,] #sinon distance.wrap plante
 #d<-d[which(d$InTransect%in%c(-1)),] les transects vides ont des NA
@@ -198,10 +198,64 @@ g<-g[g$GEOUNIT%in%c("Greenland","Iceland"),]
 #g<-spTransform(g,CRS(prj))
 
 x <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_admin_1_states_provinces",encoding="UTF-8")
-x<-x[x$admin%in%c("Canada") | (x$region%in%c("Northeast","Midwest","South") & !x$admin%in%c("India")),]
+#x<-x[x$admin%in%c("Canada") | (x$region%in%c("Northeast","Midwest","South") & !x$admin%in%c("India")),]
+#x<-x[x$admin%in%c("Canada") | (x$region%in%c("Northeast","Midwest") & !x$admin%in%c("India")),]
 #x<-spTransform(x,CRS(prj))
-#x<-spTransform(x,CRS("+init=epsg:3573"))
-#y<-spTransform(grid,CRS("+init=epsg:3573"))
+
+
+bath50 <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="GEBCO_50m_polyline",encoding="UTF-8")
+bath100 <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="GEBCO_100m_polyline",encoding="UTF-8")
+bath200 <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="GEBCO_200m_polyline",encoding="UTF-8")
+bath300 <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="GEBCO_300m_polyline",encoding="UTF-8")
+bath400 <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="GEBCO_400m_polyline",encoding="UTF-8")
+bath500 <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="GEBCO_500m_polyline",encoding="UTF-8")
+bath1000 <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="GEBCO_1000m_polyline",encoding="UTF-8")
+bath1500 <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="GEBCO_1500m_polyline",encoding="UTF-8")
+bath2000 <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="GEBCO_2000m_polyline",encoding="UTF-8")
+bath2500 <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="GEBCO_2500m_polyline",encoding="UTF-8")
+bath3000 <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="GEBCO_3000m_polyline",encoding="UTF-8")
+bath50<-spTransform(bath50,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+bath100<-spTransform(bath100,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+bath200<-spTransform(bath200,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+bath300<-spTransform(bath300,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+bath400<-spTransform(bath400,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+bath500<-spTransform(bath500,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+bath1000<-spTransform(bath1000,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+bath1500<-spTransform(bath1500,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+bath2000<-spTransform(bath2000,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+bath2500<-spTransform(bath2500,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+bath3000<-spTransform(bath3000,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+
+bA <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_bathymetry_A_10000",encoding="UTF-8")
+bB <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_bathymetry_B_9000",encoding="UTF-8")
+bC <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_bathymetry_C_8000",encoding="UTF-8")
+bD <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_bathymetry_D_7000",encoding="UTF-8")
+bE <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_bathymetry_E_6000",encoding="UTF-8")
+bF <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_bathymetry_F_5000",encoding="UTF-8")
+bG <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_bathymetry_G_4000",encoding="UTF-8")
+bH <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_bathymetry_H_3000",encoding="UTF-8")
+bI <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_bathymetry_I_2000",encoding="UTF-8")
+bJ <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_bathymetry_J_1000",encoding="UTF-8")
+bK <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_bathymetry_K_200",encoding="UTF-8")
+bL <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_bathymetry_L_0",encoding="UTF-8")
+
+
+bA<-spTransform(bA,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+bB<-spTransform(bB,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+bC<-spTransform(bC,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+bD<-spTransform(bD,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+bE<-spTransform(bE,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+bF<-spTransform(bF,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+bG<-spTransform(bG,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+bH<-spTransform(bH,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+bI<-spTransform(bI,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+bJ<-spTransform(bJ,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+bK<-spTransform(bK,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+bL<-spTransform(bL,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+
+
+
+
 
 x<-spTransform(x,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
 g<-spTransform(g,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
@@ -365,7 +419,7 @@ d<-d[!is.na(d$Distance),]
 ### Global Detection Model
 s<-sample(unique(d$SMP_LABEL[d$Alpha!="  "]),1000,replace=FALSE)
 #s<-sample(setdiff(d$WatchID,unique(d$WatchID[d$Group==""])),3000,replace=FALSE)
-ds<-d[d$SMP_LABEL%in%s,]   # à 32768 SMP_LABEL, MCDS plante 32768
+ds<-d[d$SMP_LABEL%in%s,]   # ? 32768 SMP_LABEL, MCDS plante 32768
 ds$SMP_LABEL<-as.numeric(factor(ds$SMP_LABEL))
 ds$STR_AREA<-gArea(grid[1,])/1000/1000
 length(unique(ds$SMP_LABEL))
@@ -433,7 +487,7 @@ dl<-dlply(d,.(Alpha,MonthC),function(x){ # data list
 dl<-dl[substr(names(dl),1,1)!="."]
 w<-which(nbobs$nb_obs>=50) #on garde ce qui est en haut de 50
 keep<-paste(nbobs$Alpha[w],nbobs$MonthC[w],sep=".")
-dl<-dl[which(names(dl)%in%keep)] #on enlève ce qui n'a pas assez d'observations
+dl<-dl[which(names(dl)%in%keep)] #on enl?ve ce qui n'a pas assez d'observations
 ml<-vector(mode="list",length=length(dl))
 names(ml)<-names(dl)
 
@@ -465,17 +519,17 @@ for(i in seq_along(dl)){
    #temp<-periods[periods$Group==group_list[i],]
    #period_list<-temp$Period
    
-   # sample temporaire pour ne pas dépasser le 32767
+   # sample temporaire pour ne pas d?passer le 32767
    #s<-sample(unique(d$WatchID[d$Alpha!=""]),32767,replace=FALSE)
    
-   #x<-d[d$Group%in%c(group_list[i],""),] #ne pas oublier de prendre les transects non-vides où l'espèce n'est pas
+   #x<-d[d$Group%in%c(group_list[i],""),] #ne pas oublier de prendre les transects non-vides o? l'esp?ce n'est pas
    #w<-sapply(substr(x$Date,6,10),function(a){
    #    which(temp$Start<=a & temp$End>=a)   
    #})
    #x$Period<-temp$Period[w]
   
    x<-dl[[i]]
-   #x$WatchLenKm<-5 #test temporaire pour pallier à l'absence de valeur et le non runnage des modèles
+   #x$WatchLenKm<-5 #test temporaire pour pallier ? l'absence de valeur et le non runnage des mod?les
    mult<-mult_list[match(sapply(strsplit(names(dl)[i],"\\."),function(x){x[1]}),names(mult_list))]
    x$SMP_LABEL<-as.numeric(as.factor(x$SMP_LABEL))
    x$STR_AREA<-gArea(grid[1,])/1000/1000
@@ -531,7 +585,7 @@ for(i in seq_along(lgroup)){
   
   group<-lgroup[i]
 
-  png(paste0("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps/",gsub("\\.","_",group),"____________________.png"),width=6,height=4.8,units="in",res=500)
+  png(paste0("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps/",gsub("\\.","_",group),"_.png"),width=6,height=4.8,units="in",res=500)
 
   dens<-density.map(ml[[group]],by.stratum=TRUE)
   temp<-ddply(dl[[group]],.(cell),function(k){length(unique(k$SMP_LABEL))})
@@ -561,7 +615,7 @@ for(i in seq_along(lgroup)){
   #cols<-c("black",rgb(118/255, 0, 0),"red","white")
   cols<-rev(c("darkred","red","orange","yellow","white"))
   #cols<-rev(c(heat.colors(4),"white"))
-  cols<-rev(colo.scale(1:4,c("chartreuse4","yellow","tomato3")))
+  #cols<-rev(colo.scale(1:4,c("chartreuse4","yellow","tomato3")))
   br<-suppressWarnings(classIntervals(unique(c(grid$val)), n=length(cols), style = "kmeans", rtimes = 1)$brks)
   #br<-NULL
   
@@ -572,13 +626,31 @@ for(i in seq_along(lgroup)){
   grid$coll<-colo.scale(c(r,grid$l),cols=cols,breaks=br)[-(1:2)]
   grid$coll<-alpha(grid$coll,ifelse(is.na(grid$coll),1,trans))
   
-  par(mar=c(0,0,0,0),mgp=c(0.5,0.1,0))
+  par(mar=c(1,1,1,1),mgp=c(0.5,0.1,0))
   k<-!is.na(grid$val)
   plot(grid,bg="#7AAFD1",border="#7AAFD1")
   #plot(grid)
   #plot(map.osm2,xlim=bbox(grid)[1,],ylim=bbox(grid)[2,],add=TRUE)
   #plot(grid[k,],col="white",bg=alpha("lightblue",0.5),border="grey75",xlim=bbox(grid)[1,],ylim=bbox(grid)[2,],add=TRUE)
+  
+  plot(bJ,add=TRUE,col=hcl(240,100,30),border=NA)
+  plot(bF,add=TRUE,col=hcl(240,100,40),border=NA)
+  plot(bE,add=TRUE,col=hcl(240,100,50),border=NA)
+  plot(bD,add=TRUE,col=hcl(240,100,60),border=NA)
+  plot(bC,add=TRUE,col=hcl(240,100,70),border=NA)
+  plot(bB,add=TRUE,col=hcl(240,100,80),border=NA)
+  plot(bA,add=TRUE,col=hcl(240,100,90),border=NA)
+  
+  ### lat lon
+  m<-expand.grid(seq(-160,20,by=0.2),seq(25,85,by=5))
+  p<-SpatialPoints(m,proj4string=CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"))
+  p<-spTransform(p,CRS(proj4string(grid)))
+  plot(p,add=TRUE,col="black",pch=16,cex=0.01)
+  
+  #plot(bath3000,add=TRUE,col="lightblue")
   plot(grid[k,],col=grid$col[k],border=NA,add=TRUE)
+  
+  
   
   
   #se<-seq(min(grid$val,na.rm=TRUE),max(grid$val,na.rm=TRUE),length.out=8)
@@ -648,7 +720,7 @@ for(i in seq_along(lgroup)){
   tab<-tab[order(names(tab))]
   mm<-substr(seq.Date(as.Date("2007-12-01"),as.Date("2008-11-30"),by=1),6,10)
   tab<-tab[order(match(names(tab),mm))]
-  tab<-tab[1:(length(tab)-min(which(!rev(tab)==0))+1)] # tricks pour le 1 janvier à vérifier si périodes c
+  tab<-tab[1:(length(tab)-min(which(!rev(tab)==0))+1)] # tricks pour le 1 janvier ? v?rifier si p?riodes c
   
   
   #rect(xleft=1600000,ybottom=1500000,xright=3000000,ytop=2000000,col=alpha("white",0.25),border=NA)
@@ -668,8 +740,8 @@ for(i in seq_along(lgroup)){
   subplot({barplot(tab,las=2,cex.names=0.3,cex.lab=0.3,cex.axis=0.3,yaxt="n",border=NA,ylab="Effort (km)",col="lightblue");
   	        axis(2,cex.axis=0.3,cex.lab=0.3,tcl=-0.1,lwd=0.1,las=2,col.axis="lightblue");
   	        par(new=TRUE);
-  								 barplot(temp$V1/temp$eff,las=2,cex.names=0.3,cex.lab=0.3,yaxt="n",cex.axis=0.3,border=NA,col="tomato3");
-  	        axis(4,cex.axis=0.3,cex.lab=0.3,tcl=-0.1,lwd=0.1,las=2,col.axis="tomato3");
+  								 barplot(temp$V1/temp$eff,las=2,cex.names=0.3,cex.lab=0.3,yaxt="n",cex.axis=0.3,border=NA,col="darkred");
+  	        axis(4,cex.axis=0.3,cex.lab=0.3,tcl=-0.1,lwd=0.1,las=2,col.axis="darkred");
   	        mtext("Nb ind. / km",side=4,cex=0.3,line=0.2)}
   								,x=c(1550000, 3300000),y=c(1600000, 2100000))
   
@@ -689,6 +761,20 @@ for(i in seq_along(lgroup)){
   #plot(h3,add=TRUE,col=alpha("black",0.5),border=NA)
   
   #subplot({hist(grid$diff,breaks=seq(0,300000,by=5),xlim=c(0,100))}, c(-1353981.9, 0), c(7400000, 7900000),pars=list(bg="yellow"))
+  
+  
+  ### Graticules
+  #text(coordinates(grid)[,1],coordinates(grid)[,2],coordinates(grid)[,2],cex=0.25)
+  #pos<-coobox(dshp,proj4string(grid))
+  #axis(2,at=pos$y,label=names(pos$y),xpd=TRUE,line=0,lwd=0,lwd.ticks=1,tcl=-0.15,las=2,cex.axis=tex*0.5,col="grey50")
+  #axis(4,at=pos$y,label=names(pos$y),xpd=TRUE,line=0,lwd=0,lwd.ticks=1,tcl=-0.15,las=2,cex.axis=tex*0.5,col="grey50")
+  #axis(1,at=pos$x,label=names(pos$x),xpd=TRUE,line=0,lwd=0,lwd.ticks=1,tcl=-0.15,cex.axis=tex*0.5,col="grey50")
+  #axis(3,at=pos$x,label=names(pos$x),xpd=TRUE,line=0,lwd=0,lwd.ticks=1,tcl=-0.15,cex.axis=tex*0.5,col="grey50")
+  #box(col="grey50")
+  
+
+  
+  
   
   dev.off()
   
@@ -710,8 +796,8 @@ names(opendata)[which(names(opendata)=="Estimates")]<-"Density"
 
 
 
-# 1-Construire une fonction de détection qui est indépendente des périodes sélectionnées (donc les périodes sont lsub?)
-# 2-Pour les espèces rares, utiliser le groupe pour construire la fonction de détection
+# 1-Construire une fonction de d?tection qui est ind?pendente des p?riodes s?lectionn?es (donc les p?riodes sont lsub?)
+# 2-Pour les esp?ces rares, utiliser le groupe pour construire la fonction de d?tection
 # 3-
 
 ### verif dates
