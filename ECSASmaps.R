@@ -21,6 +21,7 @@ library(rgdal)
 library(leaflet)
 library(xlsx)
 library(classInt)
+load("C:/Users/User/Documents/SCF2016_FR/yo7.RData")
 
 
 
@@ -194,7 +195,7 @@ na<-NoAm[-grep("eau",NoAm$COUNTRY),]
 
 
 g <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_admin_0_countries",encoding="UTF-8")
-g<-g[g$GEOUNIT%in%c("Greenland","Iceland"),]
+g<-g[g$GEOUNIT%in%c("Greenland","Iceland","United Kingdom","Ireland","France","Spain","Portugal"),]
 #g<-spTransform(g,CRS(prj))
 
 x <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_admin_1_states_provinces",encoding="UTF-8")
@@ -202,6 +203,10 @@ x <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m
 #x<-x[x$admin%in%c("Canada") | (x$region%in%c("Northeast","Midwest") & !x$admin%in%c("India")),]
 #x<-spTransform(x,CRS(prj))
 
+x<-spTransform(x,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+g<-spTransform(g,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+#x<-spTransform(x,CRS(proj4string(grid)))
+#g<-spTransform(g,CRS(proj4string(grid)))
 
 bath50 <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="GEBCO_50m_polyline",encoding="UTF-8")
 bath100 <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="GEBCO_100m_polyline",encoding="UTF-8")
@@ -226,41 +231,29 @@ bath2000<-spTransform(bath2000,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
 bath2500<-spTransform(bath2500,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
 bath3000<-spTransform(bath3000,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
 
-bA <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_bathymetry_A_10000",encoding="UTF-8")
-bB <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_bathymetry_B_9000",encoding="UTF-8")
-bC <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_bathymetry_C_8000",encoding="UTF-8")
-bD <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_bathymetry_D_7000",encoding="UTF-8")
-bE <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_bathymetry_E_6000",encoding="UTF-8")
-bF <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_bathymetry_F_5000",encoding="UTF-8")
-bG <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_bathymetry_G_4000",encoding="UTF-8")
-bH <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_bathymetry_H_3000",encoding="UTF-8")
-bI <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_bathymetry_I_2000",encoding="UTF-8")
-bJ <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_bathymetry_J_1000",encoding="UTF-8")
-bK <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_bathymetry_K_200",encoding="UTF-8")
-bL <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_bathymetry_L_0",encoding="UTF-8")
+
+b0 <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="b0",encoding="UTF-8")
+b200 <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="b200",encoding="UTF-8")
+b1000 <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="b1000",encoding="UTF-8")
+b2000 <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="b2000",encoding="UTF-8")
+b3000 <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="b3000",encoding="UTF-8")
+b4000 <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="b4000",encoding="UTF-8")
+b5000 <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="b5000",encoding="UTF-8")
+b6000 <- readOGR(dsn = "C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="b6000",encoding="UTF-8")
 
 
-bA<-spTransform(bA,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
-bB<-spTransform(bB,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
-bC<-spTransform(bC,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
-bD<-spTransform(bD,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
-bE<-spTransform(bE,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
-bF<-spTransform(bF,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
-bG<-spTransform(bG,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
-bH<-spTransform(bH,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
-bI<-spTransform(bI,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
-bJ<-spTransform(bJ,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
-bK<-spTransform(bK,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
-bL<-spTransform(bL,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+b0<-spTransform(b0,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+b200<-spTransform(b200,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+b1000<-spTransform(b1000,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+b2000<-spTransform(b2000,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+b3000<-spTransform(b3000,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+b4000<-spTransform(b4000,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+b5000<-spTransform(b5000,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
+b6000<-spTransform(b6000,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
 
 
 
 
-
-x<-spTransform(x,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
-g<-spTransform(g,CRS("+proj=laea +lat_0=50 +lon_0=-65"))
-#x<-spTransform(x,CRS(proj4string(grid)))
-#g<-spTransform(g,CRS(proj4string(grid)))
 
 dproj<-SpatialPointsDataFrame(SpatialPoints(matrix(c(d$LongStart,d$LatStart),ncol=2),CRS(ll)),data=d)
 dproj<-spTransform(dproj,CRS(prj))
@@ -573,19 +566,20 @@ cols<-c("black",rgb(118/255, 0, 0),"red","white")
 #cols<-c("blue","green","red","white")
 cols<-c("green","blue","red")
 
-trans<-1
+trans<-0.5
 mag<-1
 tex<-0.6
 lgroup<-names(ml)
-lgroup<-"DOVE.0405"
+lgroup<-"HERG.08091011"
 ldens<-vector(mode="list",length(lgroup))
 names(ldens)<-lgroup
+i<-1
 
 for(i in seq_along(lgroup)){
   
   group<-lgroup[i]
 
-  png(paste0("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps/",gsub("\\.","_",group),"_.png"),width=6,height=4.8,units="in",res=500)
+  png(paste0("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps/",gsub("\\.","_",group),"______________.png"),width=6,height=4.8,units="in",res=500)
 
   dens<-density.map(ml[[group]],by.stratum=TRUE)
   temp<-ddply(dl[[group]],.(cell),function(k){length(unique(k$SMP_LABEL))})
@@ -610,17 +604,18 @@ for(i in seq_along(lgroup)){
   #r<-range(c(grid$val,grid$u,grid$l),na.rm=TRUE)
   r<-range(c(grid$val),na.rm=TRUE)
 
-  #cols<-c("green","orange","red","darkred")
-  #cols<-rev(c("darkred",heat.colors(4)))
-  #cols<-c("black",rgb(118/255, 0, 0),"red","white")
-  cols<-rev(c("darkred","red","orange","yellow","white"))
-  #cols<-rev(c(heat.colors(4),"white"))
-  #cols<-rev(colo.scale(1:4,c("chartreuse4","yellow","tomato3")))
+  ###cols<-c("green","orange","red","darkred")
+  ###cols<-rev(c("darkred",heat.colors(4)))
+  ###cols<-c("black",rgb(118/255, 0, 0),"red","white")
+  cols<-rev(c("darkred","tomato3","orange","yellow","white"))
+  #cols<-colo.scale(c(0.0,0.33,0.66,1),c("white","red","darkred"))
+  ###cols<-rev(c(heat.colors(4),"white"))
+  ###cols<-rev(colo.scale(1:4,c("chartreuse4","yellow","tomato3")))
   br<-suppressWarnings(classIntervals(unique(c(grid$val)), n=length(cols), style = "kmeans", rtimes = 1)$brks)
   #br<-NULL
   
   grid$col<-colo.scale(c(r,grid$val),cols=cols,breaks=br)[-(1:2)]
-  grid$col<-alpha(ifelse(is.na(grid$cv),"lightblue",grid$col),trans)
+  grid$col<-alpha(ifelse(is.na(grid$cv),NA,grid$col),trans)
   grid$colu<-colo.scale(c(r,grid$u),cols=cols,breaks=br)[-(1:2)]
   grid$colu<-alpha(grid$colu,ifelse(is.na(grid$colu),1,trans))
   grid$coll<-colo.scale(c(r,grid$l),cols=cols,breaks=br)[-(1:2)]
@@ -633,13 +628,17 @@ for(i in seq_along(lgroup)){
   #plot(map.osm2,xlim=bbox(grid)[1,],ylim=bbox(grid)[2,],add=TRUE)
   #plot(grid[k,],col="white",bg=alpha("lightblue",0.5),border="grey75",xlim=bbox(grid)[1,],ylim=bbox(grid)[2,],add=TRUE)
   
-  plot(bJ,add=TRUE,col=hcl(240,100,30),border=NA)
-  plot(bF,add=TRUE,col=hcl(240,100,40),border=NA)
-  plot(bE,add=TRUE,col=hcl(240,100,50),border=NA)
-  plot(bD,add=TRUE,col=hcl(240,100,60),border=NA)
-  plot(bC,add=TRUE,col=hcl(240,100,70),border=NA)
-  plot(bB,add=TRUE,col=hcl(240,100,80),border=NA)
-  plot(bA,add=TRUE,col=hcl(240,100,90),border=NA)
+  l<-c(75,70,65,60,57,54,51,48) #c(70,65,60,55,50,45,42,39)
+  plot(b0,col=hcl(240,50,l[1]),border=NA,add=TRUE)
+  plot(b200,col=hcl(240,50,l[2]),border=NA,add=TRUE)
+  plot(b1000,col=hcl(240,50,l[3]),border=NA,add=TRUE)
+  plot(b2000,col=hcl(240,50,l[4]),border=NA,add=TRUE)
+  plot(b3000,col=hcl(240,50,l[5]),border=NA,add=TRUE)
+  plot(b4000,col=hcl(240,50,l[6]),border=NA,add=TRUE)
+  plot(b5000,col=hcl(240,50,l[7]),border=NA,add=TRUE)
+  plot(b6000,col=hcl(240,50,l[8]),border=NA,add=TRUE)
+  
+
   
   ### lat lon
   m<-expand.grid(seq(-160,20,by=0.2),seq(25,85,by=5))
@@ -647,12 +646,33 @@ for(i in seq_along(lgroup)){
   p<-spTransform(p,CRS(proj4string(grid)))
   plot(p,add=TRUE,col="black",pch=16,cex=0.01)
   
+  xx<-par("usr")[2]
+  m<-expand.grid(xx,seq(par("usr")[3],par("usr")[4],by=100))
+  p<-SpatialPoints(m,proj4string=CRS(proj4string(grid)))
+  p2<-spTransform(p,CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"))
+  r<-range(coordinates(p2)[,2])
+  r<-5*round(r/5) 
+  se<-seq(r[1],r[2],by=5)
+  yy<-sapply(se,function(k){
+  	coordinates(p)[which.min(abs(coordinates(p2)[,2]-k)),2]	
+  })
+  text(xx,yy,paste0(se,"°N"),xpd=TRUE,cex=tex*0.5,adj=c(1.5,0.5))
+  
+  
   #plot(bath3000,add=TRUE,col="lightblue")
-  plot(grid[k,],col=grid$col[k],border=NA,add=TRUE)
+  plot(grid[k,],col=grid$col[k],border=ifelse(is.na(grid$col[k]),alpha("lightblue",trans),NA),add=TRUE,lwd=0.75)
   
   
+  ### bathymetry lines
+  plot(gUnionCascaded(b200),border=alpha("black",0.15),add=TRUE,lwd=0.5)
+  plot(gUnionCascaded(b1000),border=alpha("black",0.15),add=TRUE,lwd=0.5)
+  plot(b2000,border=alpha("black",0.15),add=TRUE,lwd=0.5)
+  plot(b3000,border=alpha("black",0.15),add=TRUE,lwd=0.5)
+  plot(b4000,border=alpha("black",0.15),add=TRUE,lwd=0.5)
+  plot(b5000,border=alpha("black",0.15),add=TRUE,lwd=0.5)
+  plot(b6000,border=alpha("black",0.15),add=TRUE,lwd=0.5)
   
-  
+
   #se<-seq(min(grid$val,na.rm=TRUE),max(grid$val,na.rm=TRUE),length.out=8)
   if(is.null(br)){
     se<-seq(r[1],r[2],length.out=7)
@@ -661,7 +681,7 @@ for(i in seq_along(lgroup)){
   	 se<-paste(round(br[-length(br)],1),round(br[-1],1),sep=" - ")
   	 lcols<-alpha(cols,trans)
   }
-  legend(2200000,900000,fill=c(alpha("lightblue",trans),lcols),legend=c("0",paste0(c(">",rep("",length(se)-1)),if(is.numeric(se)){round(se,0)}else{se},c(rep("",length(se)-1),"+"))),y.intersp=0.75,bty="n",title="Bird Density\n(nb/km2)",border="lightblue",cex=tex*1.3,pt.cex=tex*2.5,pt.lwd=0.2)
+  legend(2200000,900000,fill=c(alpha(NA,trans),lcols),legend=c("0",paste0(c(">",rep("",length(se)-1)),if(is.numeric(se)){round(se,0)}else{se},c(rep("",length(se)-1),"+"))),y.intersp=0.75,bty="n",title="Bird Density\n(nb/km2)",border="lightblue",cex=tex*1.3,pt.cex=tex*2.5,pt.lwd=0.2)
   
   ### CV 
   #points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=mag*(grid$cv/max(grid$cv,na.rm=TRUE)),col="white")
@@ -669,10 +689,10 @@ for(i in seq_along(lgroup)){
   #points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=mag*(grid$cv/max(grid$cv,na.rm=TRUE)),col=alpha("black",0.5))
   se<-seq(min(grid$cv,na.rm=TRUE),max(grid$cv,na.rm=TRUE),length.out=4)
   #se<-c(25,50,100,200,300)
-  legend(2200000,-200000,pch=1,col="lightblue",pt.cex=1.2*mag*(se/max(grid$cv,na.rm=TRUE)),y.intersp=0.75,legend=paste0(c(rep("",length(se)-1),">"),round(se,0)),bty="n",title="CV (%)",cex=tex*1.3)
+  legend(2240000,-200000,pch=1,col="lightblue",pt.cex=1.2*mag*(se/max(grid$cv,na.rm=TRUE)),y.intersp=0.75,legend=paste0(c(rep("",length(se)-1),">"),round(se,0)),bty="n",title="CV (%)",cex=tex*1.3)
   
   ### n=1
-  text(coordinates(grid)[k,1],coordinates(grid)[k,2],grid$nbsamp[k],cex=tex*0.3,col=alpha("black",0.25))
+  #text(coordinates(grid)[k,1],coordinates(grid)[k,2],grid$nbsamp[k],cex=tex*0.3,col=alpha("black",0.25))
   
   
   
@@ -693,19 +713,22 @@ for(i in seq_along(lgroup)){
   #plot(g,add=TRUE,lwd=0.5,border=alpha("black",0.2),col=alpha("lightgoldenrod",1.0))
   #plot(x,add=TRUE,lwd=0.5,border=alpha("black",0.2),col=alpha("lightgoldenrod",1.0))
   
-  plot(g,add=TRUE,lwd=0.1,border="grey75",col="white")
-  plot(x,add=TRUE,lwd=0.1,border="grey75",col="white")
+  plot(g,add=TRUE,lwd=0.1,border=NA,col="grey65")
+  plot(x,add=TRUE,lwd=0.1,border=NA,col="grey65")
   
-  plot(g,add=TRUE,lwd=0.5,border=alpha("black",0.5))
-  plot(x,add=TRUE,lwd=0.5,border=alpha("black",0.5))
+  plot(g,add=TRUE,lwd=0.5,border=alpha("black",0.35))
+  plot(x,add=TRUE,lwd=0.5,border=alpha("black",0.35))
   
   ### plot no water raster
   #plot(rast,add=TRUE)
  
-  text(2300000,2950000,group,font=2,adj=c(0,1),cex=tex)
+  
   m<-match(group,paste(nbobs$Alpha,nbobs$Month,sep="."))
-  text(2300000,2800000,paste("No. obs:",nbobs$nb_obs[m]),adj=c(0,1),cex=tex)
-  text(2300000,2700000,paste("No. samples:",nbobs$nb_sample[m]),adj=c(0,1),cex=tex)
+  sp<-d$English[match(nbobs$Alpha[m],d$Alpha)]
+  text(2300000,2950000,sp,font=2,adj=c(0,1),cex=tex*1.4)
+  text(2300000,2780000,paste("No. obs:",nbobs$nb_obs[m]),adj=c(0,1),cex=tex*1.3)
+  text(2300000,2630000,paste("No. samples:",nbobs$nb_sample[m]),adj=c(0,1),cex=tex*1.3)
+  text(2300000,2480000,group,adj=c(0,1),cex=tex*1.3)
 
   ### barplot
   s<-unique(dl[[group]][,c("Date","SMP_LABEL","SMP_EFFORT")])
@@ -743,7 +766,7 @@ for(i in seq_along(lgroup)){
   								 barplot(temp$V1/temp$eff,las=2,cex.names=0.3,cex.lab=0.3,yaxt="n",cex.axis=0.3,border=NA,col="darkred");
   	        axis(4,cex.axis=0.3,cex.lab=0.3,tcl=-0.1,lwd=0.1,las=2,col.axis="darkred");
   	        mtext("Nb ind. / km",side=4,cex=0.3,line=0.2)}
-  								,x=c(1550000, 3300000),y=c(1600000, 2100000))
+  								,x=c(1450000, 3100000),y=c(1600000, 2100000))
   
   ### MODULE DE IC HEXAGONAL
   #cent<-2500000
@@ -770,7 +793,7 @@ for(i in seq_along(lgroup)){
   #axis(4,at=pos$y,label=names(pos$y),xpd=TRUE,line=0,lwd=0,lwd.ticks=1,tcl=-0.15,las=2,cex.axis=tex*0.5,col="grey50")
   #axis(1,at=pos$x,label=names(pos$x),xpd=TRUE,line=0,lwd=0,lwd.ticks=1,tcl=-0.15,cex.axis=tex*0.5,col="grey50")
   #axis(3,at=pos$x,label=names(pos$x),xpd=TRUE,line=0,lwd=0,lwd.ticks=1,tcl=-0.15,cex.axis=tex*0.5,col="grey50")
-  #box(col="grey50")
+  box(col="grey50")
   
 
   
@@ -789,6 +812,10 @@ for(i in seq_along(lgroup)){
   
 }
 
+
+#######
+#######
+#######
 opendata<-do.call("rbind",ldens)
 opendata<-subset(opendata,select=-c(Parameters))
 row.names(opendata)<-1:nrow(opendata)
