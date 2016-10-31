@@ -21,7 +21,8 @@ library(rgdal)
 library(leaflet)
 library(xlsx)
 library(classInt)
-load("C:/Users/User/Documents/SCF2016_FR/yo7.RData")
+library(FRutils)
+load("C:/Users/User/Documents/SCF2016_FR/yo8.RData")
 
 
 colo.scale<-function(x,cols=c("white","yellow","tomato3","darkred"),center=TRUE,alpha=1,breaks=NULL){
@@ -118,6 +119,11 @@ prj<-"+proj=utm +zone=22 +datum=NAD83 +ellps=GRS80"
 laea<-"+proj=laea +lat_0=50 +lon_0=-65"
 
 
+### extract QC data that is not in ECSAS yet
+addQC<-SOMEC2ECSAS(input="C:/Users/User/Documents/SCF2016_FR/ECSASdata/SOMEC.accdb",output="C:/Users/User/Documents/SCF2016_FR/ECSASdata/ECSASexport.csv",date="2014-04-01",step="5 min")
+names(addQC)<-gsub("Orig","",names(addQC))
+
+
 ### replace french names
 db<-odbcConnectAccess2007("C:/Users/User/Documents/SCF2016_FR/ECSASdata/SOMEC.accdb")
 qc<-sqlFetch(db,"Code espèces",as.is=TRUE)
@@ -127,9 +133,10 @@ gn<-c("FOBA","FUBO","FULM","GOAC","GOAR","GUMA","LALQ","LIMICOLESP","OCWI","PATC
 m<-match(addQC$Alpha,bn)
 addQC$Alpha<-ifelse(is.na(m),addQC$Alpha,gn[m])
 m<-match(addQC$Alpha,qc$CodeFR)
-addQC$Alpha<-ifelse(is.na(m),ifelse(addQC$Alpha%in%c("RIEN"),addQC$Alpha,NA),qc$CodeAN[m])
+addQC$Alpha<-ifelse(!is.na(m),qc$CodeAN[m],addQC$Alpha)
 addQC$add<-1 # pour v?rifier les lignes restantes ? la fin
 addQC$Date<-ifelse(is.na(addQC$Date),substr(addQC$StartTime,1,10),addQC$Date)
+addQC$Distance<-ifelse(is.na(addQC$Distance),"",addQC$Distance) # temp car la fonction SOMEC2ECSAS retournait des NA
 
 
 d<-ecsas
@@ -358,7 +365,7 @@ names(ml)<-names(dl)
 
 #ALSP.08091011 ne run pas pour une raison obscure
 
-for(i in seq_along(dl)[5]){
+for(i in seq_along(dl)){
   
    x<-dl[[i]]
    mult<-mult_list[match(sapply(strsplit(names(dl)[i],"\\."),function(x){x[1]}),names(mult_list))]
