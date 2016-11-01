@@ -120,7 +120,7 @@ laea<-"+proj=laea +lat_0=50 +lon_0=-65"
 
 
 ### extract QC data that is not in ECSAS yet
-addQC<-SOMEC2ECSAS(input="C:/Users/User/Documents/SCF2016_FR/ECSASdata/SOMEC.accdb",output="C:/Users/User/Documents/SCF2016_FR/ECSASdata/ECSASexport.csv",date="2014-04-01",step="5 min")
+addQC<-SOMEC2ECSAS(input="C:/Users/User/Documents/SCF2016_FR/ECSASdata/SOMEC.accdb",output="C:/Users/User/Documents/SCF2016_FR/ECSASdata/ECSASexport.csv",date="2014-04-01",step="5 min",spNA=FALSE)
 names(addQC)<-gsub("Orig","",names(addQC))
 
 
@@ -136,7 +136,7 @@ m<-match(addQC$Alpha,qc$CodeFR)
 addQC$Alpha<-ifelse(!is.na(m),qc$CodeAN[m],addQC$Alpha)
 addQC$add<-1 # pour v?rifier les lignes restantes ? la fin
 addQC$Date<-ifelse(is.na(addQC$Date),substr(addQC$StartTime,1,10),addQC$Date)
-addQC$Distance<-ifelse(is.na(addQC$Distance),"",addQC$Distance) # temp car la fonction SOMEC2ECSAS retournait des NA
+#addQC$Distance<-ifelse(is.na(addQC$Distance),"",addQC$Distance) # temp car la fonction SOMEC2ECSAS retournait des NA
 
 
 d<-ecsas
@@ -411,11 +411,12 @@ for(i in seq_along(dl)){
 #grid<-spTransform(grid,CRS(laea))
 
 cols<-rev(c("darkred","tomato3","orange","yellow","white"))
-trans<-0.80
+cols<-rev(colo.scale(seq(0,1,by=0.25),c("darkred","red","white")))
+trans<-0.65
 mag<-1
 tex<-0.6
 lgroup<-names(ml)
-lgroup<-"HERG.08091011"
+lgroup<-"DOVE.08091011"
 ldens<-vector(mode="list",length(lgroup))
 names(ldens)<-lgroup
 i<-1
@@ -424,7 +425,7 @@ for(i in seq_along(lgroup)){
   
   group<-lgroup[i]
 
-  png(paste0("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps/",gsub("\\.","_",group),"n.png"),width=6,height=4.8,units="in",res=500)
+  png(paste0("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps/",gsub("\\.","_",group),"nnn.png"),width=6,height=4.8,units="in",res=500)
 
   dens<-density.map(ml[[group]],by.stratum=TRUE)
   temp<-ddply(dl[[group]],.(cell),function(k){length(unique(k$SMP_LABEL))})
@@ -458,7 +459,20 @@ for(i in seq_along(lgroup)){
   grid$colu<-alpha(grid$colu,ifelse(is.na(grid$colu),1,trans))
   grid$coll<-colo.scale(c(r,grid$l),cols=cols,breaks=br)[-(1:2)]
   grid$coll<-alpha(grid$coll,ifelse(is.na(grid$coll),1,trans))
+  ncv<-4
+  brcv<-suppressWarnings(classIntervals(unique(grid$cv), n=ncv, style = "kmeans", rtimes = 1)$brks)
+  cexcv<-seq(0.2,1,length.out=4)
+  cutcv<-cut(grid$cv,breaks=brcv)
+  grid$cex<-cexcv[as.numeric(cutcv)]*mag
   
+  holes<-gBuffer(SpatialPoints(coordinates(grid),proj4string=CRS(proj4string(grid))),width=ifelse(is.na(grid$cex),0,grid$cex*40000),byid=TRUE)
+  
+  #plot(grid)
+  #plot(holes,add=TRUE,col="red")
+  gholes<-gIntersection(gDifference(grid,holes),grid,byid=TRUE)
+  #plot(gholes,add=TRUE,col="blue")
+  
+  ### PLOT
   par(mar=c(1,1,1,1),mgp=c(0.5,0.1,0))
   k<-!is.na(grid$val)
   plot(grid,bg="#7AAFD1",border="#7AAFD1")
@@ -466,7 +480,7 @@ for(i in seq_along(lgroup)){
   #plot(map.osm2,xlim=bbox(grid)[1,],ylim=bbox(grid)[2,],add=TRUE)
   #plot(grid[k,],col="white",bg=alpha("lightblue",0.5),border="grey75",xlim=bbox(grid)[1,],ylim=bbox(grid)[2,],add=TRUE)
   
-  l<-c(75,72,69,66,63,60,57,54) #c(70,65,60,55,50,45,42,39)
+  l<-c(75,72,69,66,63,60,57,54)-5 #c(70,65,60,55,50,45,42,39)
   plot(b0,col=hcl(240,50,l[1]),border=NA,add=TRUE)
   plot(b200,col=hcl(240,50,l[2]),border=NA,add=TRUE)
   plot(b1000,col=hcl(240,50,l[3]),border=NA,add=TRUE)
@@ -494,24 +508,30 @@ for(i in seq_along(lgroup)){
   })
   text(xx,yy,paste0(se,"°N"),xpd=TRUE,cex=tex*0.5,adj=c(1.5,0.5))
   
-  
-  ### plot shapefiles
+  ### plot grid and values
   plot(eu,add=TRUE,lwd=0.1,border=NA,col="grey75")
   plot(na,add=TRUE,lwd=0.1,border=NA,col="grey75")
- 
-  plot(grid[k,],col=grid$col[k],border=ifelse(is.na(grid$col[k]),alpha("lightblue",trans),NA),add=TRUE,lwd=0.75)
+  
+  ### PLOT GRID WITH HOLES OR NOT
+  #plot(grid[k,],col=grid$col[k],border=ifelse(is.na(grid$col[k]),alpha("lightblue",trans),NA),add=TRUE,lwd=0.5)
+  plot(gholes[k],col=grid$col[k],border=ifelse(is.na(grid$col[k]),alpha("lightblue",trans),NA),add=TRUE,lwd=0.5)
+  
+  
+  ### plot shapefiles
+  plot(eu,add=TRUE,lwd=0.1,border=NA,col=alpha("grey75",0.85))
+  plot(na,add=TRUE,lwd=0.1,border=NA,col=alpha("grey75",0.85))
   
   plot(eu,add=TRUE,lwd=0.5,border="grey55")
   plot(na,add=TRUE,lwd=0.5,border="grey55")
   
   ### bathymetry lines
-  plot(gUnionCascaded(b200),border=alpha("black",0.1),add=TRUE,lwd=0.5)
-  plot(gUnionCascaded(b1000),border=alpha("black",0.1),add=TRUE,lwd=0.5)
-  plot(b2000,border=alpha("black",0.1),add=TRUE,lwd=0.5)
-  plot(b3000,border=alpha("black",0.1),add=TRUE,lwd=0.5)
-  plot(b4000,border=alpha("black",0.1),add=TRUE,lwd=0.5)
-  plot(b5000,border=alpha("black",0.1),add=TRUE,lwd=0.5)
-  plot(b6000,border=alpha("black",0.1),add=TRUE,lwd=0.5)
+  plot(gUnionCascaded(b200),border=alpha("black",0.2),add=TRUE,lwd=0.5)
+  plot(gUnionCascaded(b1000),border=alpha("black",0.2),add=TRUE,lwd=0.5)
+  plot(b2000,border=alpha("black",0.2),add=TRUE,lwd=0.5)
+  plot(b3000,border=alpha("black",0.2),add=TRUE,lwd=0.5)
+  plot(b4000,border=alpha("black",0.2),add=TRUE,lwd=0.5)
+  plot(b5000,border=alpha("black",0.2),add=TRUE,lwd=0.5)
+  plot(b6000,border=alpha("black",0.2),add=TRUE,lwd=0.5)
   
  
   #rect(2000000,-2200000,3800000,3000000,col=alpha("white",0.2),border=NA)
@@ -526,19 +546,28 @@ for(i in seq_along(lgroup)){
   }
   legend(2200000,900000,fill=c(alpha(NA,trans),lcols),legend=c("0",paste0(c(">",rep("",length(se)-1)),if(is.numeric(se)){round(se,0)}else{se},c(rep("",length(se)-1),"+"))),y.intersp=0.75,bty="n",title="Bird Density\n(nb/km2)",border="lightblue",cex=tex*1.3,pt.cex=tex*2.5,pt.lwd=0.2)
   
-  ### CV 
-  #points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=mag*(grid$cv/max(grid$cv,na.rm=TRUE)),col="white")
-  points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=mag*(grid$cv/max(grid$cv,na.rm=TRUE)),col=alpha("#7AAFD1",1))
-  #points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=mag*(grid$cv/max(grid$cv,na.rm=TRUE)),col=alpha("black",0.5))
-  se<-seq(min(grid$cv,na.rm=TRUE),max(grid$cv,na.rm=TRUE),length.out=4)
-  #se<-c(25,50,100,200,300)
-  legend(2240000,-200000,pch=1,col="lightblue",pt.cex=1.2*mag*(se/max(grid$cv,na.rm=TRUE)),y.intersp=0.75,legend=paste0(c(rep("",length(se)-1),">"),round(se,0)),bty="n",title="CV (%)",cex=tex*1.3)
   
-  ### n=1
+  
+  ### CV 
+
+  #####points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=mag*(grid$cv/max(grid$cv,na.rm=TRUE)),col="white")
+  #points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=grid$cex,col="#7AAFD1")
+  ##points(coordinates(grid)[,1],coordinates(grid)[,2],pch=1,cex=mag*(grid$cv/max(grid$cv,na.rm=TRUE)),col=alpha("green",0.8))
+  #####points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=mag*(grid$cv/max(grid$cv,na.rm=TRUE)),col=alpha("black",0.5))
+  se<-seq(min(grid$cv,na.rm=TRUE),max(grid$cv,na.rm=TRUE),length.out=4)
+  #####se<-c(25,50,100,200,300)
+  #legend(2240000,-200000,pch=1,col="lightblue",pt.cex=1.2*mag*(se/max(grid$cv,na.rm=TRUE)),y.intersp=0.75,legend=paste0(c(rep("",length(se)-1),">"),round(se,0)),bty="n",title="CV (%)",cex=tex*1.3)
+  cvleg<-strsplit(gsub("\\)|\\(|\\]|\\[","",gsub(","," - ",levels(cutcv)))," - ")
+  cvleg<-sapply(cvleg,function(k){paste(gsub(" ","",format(as.numeric(k),nsmall=1,digits=0)),collapse=" - ")})
+  legend(2240000,-200000,pch=1,col="lightblue",pt.cex=1.2*cexcv*mag,y.intersp=0.75,legend=cvleg,bty="n",title="CV (%)",cex=tex*1.3,pt.lwd=0.5)
+  
+  
+  
+  ### SAMPLE SIZE
   #text(coordinates(grid)[k,1],coordinates(grid)[k,2],grid$nbsamp[k],cex=tex*0.3,col=alpha("black",0.25))
   
   
-  
+
   ### LOWER CI
   #points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=mag,col=alpha("#7AAFD1",ifelse(is.na(grid$coll),0,1)))
   #points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=mag,col=grid$coll)
