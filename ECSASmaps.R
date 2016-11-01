@@ -465,10 +465,7 @@ for(i in seq_along(lgroup)){
   cutcv<-cut(grid$cv,breaks=brcv)
   grid$cex<-cexcv[as.numeric(cutcv)]*mag
   
-  holes<-gBuffer(SpatialPoints(coordinates(grid),proj4string=CRS(proj4string(grid))),width=ifelse(is.na(grid$cex),0,grid$cex*40000),byid=TRUE)
-  
-  #plot(grid)
-  #plot(holes,add=TRUE,col="red")
+  holes<-gBuffer(SpatialPoints(coordinates(grid),proj4string=CRS(proj4string(grid))),width=ifelse(is.na(grid$cex),0,grid$cex*40000),byid=TRUE) # the buffer width value needs to be adjusted manually with the cex of the legend
   gholes<-gIntersection(gDifference(grid,holes),grid,byid=TRUE)
   #plot(gholes,add=TRUE,col="blue")
   
@@ -492,21 +489,21 @@ for(i in seq_along(lgroup)){
   
   ### draw latitudes
   m<-expand.grid(seq(-160,20,by=0.2),seq(25,85,by=5))
-  p<-SpatialPoints(m,proj4string=CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"))
-  p<-spTransform(p,CRS(proj4string(grid)))
-  plot(p,add=TRUE,col="black",pch=16,cex=0.01)
+  lat<-SpatialPoints(m,proj4string=CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"))
+  lat<-spTransform(lat,CRS(proj4string(grid)))
+  plot(lat,add=TRUE,col="black",pch=16,cex=0.01)
   
-  xx<-par("usr")[2]
-  m<-expand.grid(xx,seq(par("usr")[3],par("usr")[4],by=100))
+  xxlat<-par("usr")[1]
+  m<-expand.grid(xxlat,seq(par("usr")[3],par("usr")[4],by=100))
   p<-SpatialPoints(m,proj4string=CRS(proj4string(grid)))
   p2<-spTransform(p,CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"))
   r<-range(coordinates(p2)[,2])
   r<-5*round(r/5) 
-  se<-seq(r[1],r[2],by=5)
-  yy<-sapply(se,function(k){
+  selat<-seq(r[1],r[2],by=5)
+  yylat<-sapply(selat,function(k){
   	coordinates(p)[which.min(abs(coordinates(p2)[,2]-k)),2]	
   })
-  text(xx,yy,paste0(se,"°N"),xpd=TRUE,cex=tex*0.5,adj=c(1.5,0.5))
+  
   
   ### plot grid and values
   plot(eu,add=TRUE,lwd=0.1,border=NA,col="grey75")
@@ -523,6 +520,11 @@ for(i in seq_along(lgroup)){
   
   plot(eu,add=TRUE,lwd=0.5,border="grey55")
   plot(na,add=TRUE,lwd=0.5,border="grey55")
+  
+  
+  o1<-over(lat,na)
+  o2<-apply(over(lat,eu),1,function(k){all(is.na(k))})
+  plot(lat[!is.na(o1) | !is.na(o2)],add=TRUE,col="black",pch=16,cex=0.01)
   
   ### bathymetry lines
   plot(gUnionCascaded(b200),border=alpha("black",0.2),add=TRUE,lwd=0.5)
@@ -544,7 +546,7 @@ for(i in seq_along(lgroup)){
   	 se<-paste(round(br[-length(br)],1),round(br[-1],1),sep=" - ")
   	 lcols<-alpha(cols,trans)
   }
-  legend(2200000,900000,fill=c(alpha(NA,trans),lcols),legend=c("0",paste0(c(">",rep("",length(se)-1)),if(is.numeric(se)){round(se,0)}else{se},c(rep("",length(se)-1),"+"))),y.intersp=0.75,bty="n",title="Bird Density\n(nb/km2)",border="lightblue",cex=tex*1.3,pt.cex=tex*2.5,pt.lwd=0.2)
+  legend(2300000,300000,fill=c(alpha(NA,trans),lcols),legend=c("0",paste0(c(">",rep("",length(se)-1)),if(is.numeric(se)){round(se,0)}else{se},c(rep("",length(se)-1),"+"))),y.intersp=0.75,bty="n",title="Bird Density\n(nb/km2)",border="lightblue",cex=tex*1.3,pt.cex=tex*2.5,pt.lwd=0.2)
   
   
   
@@ -559,7 +561,7 @@ for(i in seq_along(lgroup)){
   #legend(2240000,-200000,pch=1,col="lightblue",pt.cex=1.2*mag*(se/max(grid$cv,na.rm=TRUE)),y.intersp=0.75,legend=paste0(c(rep("",length(se)-1),">"),round(se,0)),bty="n",title="CV (%)",cex=tex*1.3)
   cvleg<-strsplit(gsub("\\)|\\(|\\]|\\[","",gsub(","," - ",levels(cutcv)))," - ")
   cvleg<-sapply(cvleg,function(k){paste(gsub(" ","",format(as.numeric(k),nsmall=1,digits=0)),collapse=" - ")})
-  legend(2240000,-200000,pch=1,col="lightblue",pt.cex=1.2*cexcv*mag,y.intersp=0.75,legend=cvleg,bty="n",title="CV (%)",cex=tex*1.3,pt.lwd=0.5)
+  legend(2340000,-700000,pch=1,col="lightblue",pt.cex=1.2*cexcv*mag,y.intersp=0.75,legend=cvleg,bty="n",title="CV (%)",cex=tex*1.3,pt.lwd=0.5)
   
   
   
@@ -620,7 +622,7 @@ for(i in seq_along(lgroup)){
   								 barplot(temp$V1/temp$eff,las=2,cex.names=0.3,cex.lab=0.3,yaxt="n",cex.axis=0.3,border=NA,col="darkred");
   	        axis(4,cex.axis=0.3,cex.lab=0.3,tcl=-0.1,lwd=0.1,las=2,col.axis="darkred");
   	        mtext("Nb ind. / km",side=4,cex=0.3,line=0.2)}
-  								,x=c(1450000, 3100000),y=c(1600000, 2100000))
+  								,x=c(1850000, 3350000),y=c(700000, 1200000))
   
   ### MODULE DE IC HEXAGONAL
   #cent<-2500000
@@ -641,6 +643,8 @@ for(i in seq_along(lgroup)){
   
   box(col="grey50")
   
+  ### LATITUDES numbers
+  text(xxlat,yylat,paste0(selat,"°N"),xpd=TRUE,cex=tex*0.5,adj=c(-0.35,-1))
 
   dev.off()
   
