@@ -339,8 +339,9 @@ mult_list<-sapply(group_list,function(i){
 mult_list<-mult_list[match(d$Group[match(unique(d$Alpha),d$Alpha)],names(mult_list))]
 names(mult_list)<-unique(d$Alpha)
 mult_list<-mult_list[!is.na(mult_list)]
+mult_list<-c(mult_list,ABCD=mean(mult_list)) ### added the mean for doing on all species
 
-
+### build data for each species
 dl<-dlply(d,.(Alpha,MonthC),function(x){ # data list
   y<-d[d$MonthC==x$MonthC[1],]
   w1<-which(y$Alpha!=x$Alpha[1])
@@ -351,12 +352,30 @@ dl<-dlply(d,.(Alpha,MonthC),function(x){ # data list
   y<-y[order(y$SMP_LABEL,y$Empty),]
   y[which(y$Empty==0 | !duplicated(y$SMP_LABEL)),]
 })
+### build data for all species combined
+d2<-d
+d2$Alpha<-ifelse(d$Alpha=="",d$Alpha,"ABCD")
+dl2<-dlply(d2,.(Alpha,MonthC),function(x){ # data list
+	y<-d2[d2$MonthC==x$MonthC[1],]
+	w1<-which(y$Alpha!=x$Alpha[1])
+	y$Empty<-0
+	y$Empty[w1]<-1
+	y$Alpha[w1]<-""
+	y$Count[w1]<-""
+	y<-y[order(y$SMP_LABEL,y$Empty),]
+	y[which(y$Empty==0 | !duplicated(y$SMP_LABEL)),]
+})
+
+### subset list and combine with all species
+dl<-c(dl,dl2)
 dl<-dl[substr(names(dl),1,1)!="."]
 w<-which(nbobs$nb_obs>=50) #on garde ce qui est en haut de 50
-keep<-paste(nbobs$Alpha[w],nbobs$MonthC[w],sep=".")
+keep<-c(paste(nbobs$Alpha[w],nbobs$MonthC[w],sep="."),names(dl2))
 dl<-dl[which(names(dl)%in%keep)] #on enl?ve ce qui n'a pas assez d'observations
 ml<-vector(mode="list",length=length(dl))
 names(ml)<-names(dl)
+
+### ADD A TOATL
 
 
 ######################################
@@ -365,7 +384,7 @@ names(ml)<-names(dl)
 
 #ALSP.08091011 ne run pas pour une raison obscure
 
-for(i in seq_along(dl)){
+for(i in tail(seq_along(dl),4)){
   
    x<-dl[[i]]
    mult<-mult_list[match(sapply(strsplit(names(dl)[i],"\\."),function(x){x[1]}),names(mult_list))]
@@ -416,7 +435,7 @@ trans<-0.65
 mag<-1
 tex<-0.6
 lgroup<-names(ml)
-lgroup<-"DOVE.08091011"
+lgroup<-"NOFU.08091011"
 ldens<-vector(mode="list",length(lgroup))
 names(ldens)<-lgroup
 i<-1
@@ -470,7 +489,7 @@ for(i in seq_along(lgroup)){
   #plot(gholes,add=TRUE,col="blue")
   
   ### PLOT
-  par(mar=c(1,1,1,1),mgp=c(0.5,0.1,0))
+  par(mar=c(0,0,0,0),mgp=c(0.5,0.1,0))
   k<-!is.na(grid$val)
   plot(grid,bg="#7AAFD1",border="#7AAFD1")
   #plot(grid)
@@ -491,7 +510,7 @@ for(i in seq_along(lgroup)){
   m<-expand.grid(seq(-160,20,by=0.2),seq(25,85,by=5))
   lat<-SpatialPoints(m,proj4string=CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"))
   lat<-spTransform(lat,CRS(proj4string(grid)))
-  plot(lat,add=TRUE,col="black",pch=16,cex=0.01)
+  plot(lat,add=TRUE,col="grey20",pch=16,cex=0.01)
   
   xxlat<-par("usr")[1]
   m<-expand.grid(xxlat,seq(par("usr")[3],par("usr")[4],by=100))
@@ -524,7 +543,7 @@ for(i in seq_along(lgroup)){
   
   o1<-over(lat,na)
   o2<-apply(over(lat,eu),1,function(k){all(is.na(k))})
-  plot(lat[!is.na(o1) | !is.na(o2)],add=TRUE,col="black",pch=16,cex=0.01)
+  plot(lat[!is.na(o1) | !o2],add=TRUE,col="grey30",pch=16,cex=0.01)
   
   ### bathymetry lines
   plot(gUnionCascaded(b200),border=alpha("black",0.2),add=TRUE,lwd=0.5)
@@ -536,8 +555,11 @@ for(i in seq_along(lgroup)){
   plot(b6000,border=alpha("black",0.2),add=TRUE,lwd=0.5)
   
  
-  #rect(2000000,-2200000,3800000,3000000,col=alpha("white",0.2),border=NA)
+  rect(1100000,2600000,3800000,3100000,col=alpha("white",0.4),border=NA)
   #rect(-2000000,2700000,4000000,3000000,col=alpha("white",0.2),border=NA)
+  
+  plot(eu[eu$ADMIN=="Greenland",],add=TRUE,lwd=0.1,border="grey55",col="grey75")
+  
   
   if(is.null(br)){
     se<-seq(r[1],r[2],length.out=7)
@@ -546,7 +568,7 @@ for(i in seq_along(lgroup)){
   	 se<-paste(round(br[-length(br)],1),round(br[-1],1),sep=" - ")
   	 lcols<-alpha(cols,trans)
   }
-  legend(2300000,300000,fill=c(alpha(NA,trans),lcols),legend=c("0",paste0(c(">",rep("",length(se)-1)),if(is.numeric(se)){round(se,0)}else{se},c(rep("",length(se)-1),"+"))),y.intersp=0.75,bty="n",title="Bird Density\n(nb/km2)",border="lightblue",cex=tex*1.3,pt.cex=tex*2.5,pt.lwd=0.2)
+  legend(2500000,1300000,fill=c(alpha(NA,trans),lcols),legend=c("0",paste0(c(">",rep("",length(se)-1)),if(is.numeric(se)){round(se,0)}else{se},c(rep("",length(se)-1),"+"))),y.intersp=0.75,bty="n",title="Density (nb/km2)",border="lightblue",cex=tex*1.3,pt.cex=tex*2.5,pt.lwd=0.2)
   
   
   
@@ -561,7 +583,7 @@ for(i in seq_along(lgroup)){
   #legend(2240000,-200000,pch=1,col="lightblue",pt.cex=1.2*mag*(se/max(grid$cv,na.rm=TRUE)),y.intersp=0.75,legend=paste0(c(rep("",length(se)-1),">"),round(se,0)),bty="n",title="CV (%)",cex=tex*1.3)
   cvleg<-strsplit(gsub("\\)|\\(|\\]|\\[","",gsub(","," - ",levels(cutcv)))," - ")
   cvleg<-sapply(cvleg,function(k){paste(gsub(" ","",format(as.numeric(k),nsmall=1,digits=0)),collapse=" - ")})
-  legend(2340000,-700000,pch=1,col="lightblue",pt.cex=1.2*cexcv*mag,y.intersp=0.75,legend=cvleg,bty="n",title="CV (%)",cex=tex*1.3,pt.lwd=0.5)
+  legend(2540000,300000,pch=1,col="lightblue",pt.cex=1.2*cexcv*mag,y.intersp=0.75,legend=cvleg,bty="n",title="CV (%)",cex=tex*1.3,pt.lwd=0.5)
   
   
   
@@ -583,10 +605,11 @@ for(i in seq_along(lgroup)){
   
   m<-match(group,paste(nbobs$Alpha,nbobs$Month,sep="."))
   sp<-d$English[match(nbobs$Alpha[m],d$Alpha)]
-  text(2300000,2950000,sp,font=2,adj=c(0,1),cex=tex*1.4)
-  text(2300000,2780000,paste("No. obs:",nbobs$nb_obs[m]),adj=c(0,1),cex=tex*1.3)
-  text(2300000,2630000,paste("No. samples:",nbobs$nb_sample[m]),adj=c(0,1),cex=tex*1.3)
-  text(2300000,2480000,group,adj=c(0,1),cex=tex*1.3)
+  text(1600000,2900000,sp,font=2,adj=c(0,0.5),cex=tex*1.4)
+  text(1600000,2720000,group,adj=c(0,0.5),cex=tex*1.3)
+  text(3650000,2900000,paste("No. obs:",nbobs$nb_obs[m]),adj=c(1,0.5),cex=tex*1.3)
+  text(3650000,2720000,paste("No. samples:",nbobs$nb_sample[m]),adj=c(1,0.5),cex=tex*1.3)
+ 
 
   ### barplot
   s<-unique(dl[[group]][,c("Date","SMP_LABEL","SMP_EFFORT")])
@@ -615,14 +638,14 @@ for(i in seq_along(lgroup)){
   
   
   
-  names(tab)[setdiff(seq_along(tab),seq(1,length(tab),by=4))]<-""
+  names(tab)[setdiff(seq_along(tab),seq(1,length(tab),by=10))]<-""
   subplot({barplot(tab,las=2,cex.names=0.3,cex.lab=0.3,cex.axis=0.3,yaxt="n",border=NA,ylab="Effort (km)",col="lightblue");
   	        axis(2,cex.axis=0.3,cex.lab=0.3,tcl=-0.1,lwd=0.1,las=2,col.axis="lightblue");
   	        par(new=TRUE);
   								 barplot(temp$V1/temp$eff,las=2,cex.names=0.3,cex.lab=0.3,yaxt="n",cex.axis=0.3,border=NA,col="darkred");
   	        axis(4,cex.axis=0.3,cex.lab=0.3,tcl=-0.1,lwd=0.1,las=2,col.axis="darkred");
   	        mtext("Nb ind. / km",side=4,cex=0.3,line=0.2)}
-  								,x=c(1850000, 3350000),y=c(700000, 1200000))
+  								,x=c(2000000, 3450000),y=c(-1150000, -650000))
   
   ### MODULE DE IC HEXAGONAL
   #cent<-2500000
@@ -641,10 +664,19 @@ for(i in seq_along(lgroup)){
   
   #subplot({hist(grid$diff,breaks=seq(0,300000,by=5),xlim=c(0,100))}, c(-1353981.9, 0), c(7400000, 7900000),pars=list(bg="yellow"))
   
-  box(col="grey50")
+  
   
   ### LATITUDES numbers
   text(xxlat,yylat,paste0(selat,"°N"),xpd=TRUE,cex=tex*0.5,adj=c(-0.35,-1))
+  
+  rect(-60001100000,-70000000000,6000000000,-1340000,col=alpha("white",0.4),border=NA)
+  #rect(-60001100000,2960000,6000000000,3000000000,col=alpha("white",0.4),border=NA)
+  text(par("usr")[1],-1370000,"These predicted densities are derived from a distance sampling model using Distance 6.0 and the GeoAviR R package with the Eastern Canadian Seabirds-at-Seas database. Detection probabilities have been estimated by species guilds.",cex=tex*0.4,adj=c(0,0.5))
+  
+  ### PGRID
+  #pgrid(25,cex=0.15)
+  
+  box(col="grey50")
 
   dev.off()
   
