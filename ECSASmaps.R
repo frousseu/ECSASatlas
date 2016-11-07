@@ -155,7 +155,7 @@ d<-d[which(d$LatStart>(0) & d$LatStart<(90)),]
 d<-distance.filter(d,distance.labels=c(25,75,150,250))
 d<-d[order(d$CruiseID,d$WatchID,d$Date,substr(d$StartTime,12,19)),]
 d$Month<-substr(d$Date,6,7)
-month_comb<-c("12010203","0405","0607","08091011")
+month_comb<-c("12010203","04050607","08091011")
 d$MonthC<-month_comb[sapply(d$Month,function(i){
   g<-grep(i,month_comb)
   if(length(g)>1){
@@ -384,7 +384,7 @@ names(ml)<-names(dl)
 
 #ALSP.08091011 ne run pas pour une raison obscure
 
-for(i in tail(seq_along(dl),4)){
+for(i in seq_along(dl)){
   
    x<-dl[[i]]
    mult<-mult_list[match(sapply(strsplit(names(dl)[i],"\\."),function(x){x[1]}),names(mult_list))]
@@ -434,8 +434,8 @@ cols<-rev(colo.scale(seq(0,1,by=0.25),c("darkred","red","white")))
 trans<-0.65
 mag<-1
 tex<-0.6
-lgroup<-names(ml)
-lgroup<-"NOFU.08091011"
+lgroup<-names(ml)[sample(seq_along(ml),10)]
+#lgroup<-"NOFU.04050607"
 ldens<-vector(mode="list",length(lgroup))
 names(ldens)<-lgroup
 i<-1
@@ -444,7 +444,7 @@ for(i in seq_along(lgroup)){
   
   group<-lgroup[i]
 
-  png(paste0("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps/",gsub("\\.","_",group),"nnn.png"),width=6,height=4.8,units="in",res=500)
+  png(paste0("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps/",gsub("\\.","_",group),".png"),width=6,height=4.8,units="in",res=500)
 
   dens<-density.map(ml[[group]],by.stratum=TRUE)
   temp<-ddply(dl[[group]],.(cell),function(k){length(unique(k$SMP_LABEL))})
@@ -560,7 +560,6 @@ for(i in seq_along(lgroup)){
   
   plot(eu[eu$ADMIN=="Greenland",],add=TRUE,lwd=0.1,border="grey55",col="grey75")
   
-  
   if(is.null(br)){
     se<-seq(r[1],r[2],length.out=7)
     lcols<-rev(alpha(tail(colo.scale(c(grid$val,se),cols=rev(cols),breaks=br),length(se)),trans))
@@ -568,9 +567,7 @@ for(i in seq_along(lgroup)){
   	 se<-paste(round(br[-length(br)],1),round(br[-1],1),sep=" - ")
   	 lcols<-alpha(cols,trans)
   }
-  legend(2500000,1300000,fill=c(alpha(NA,trans),lcols),legend=c("0",paste0(c(">",rep("",length(se)-1)),if(is.numeric(se)){round(se,0)}else{se},c(rep("",length(se)-1),"+"))),y.intersp=0.75,bty="n",title="Density (nb/km2)",border="lightblue",cex=tex*1.3,pt.cex=tex*2.5,pt.lwd=0.2)
-  
-  
+  legend(2500000,1300000,pt.bg=c(alpha(NA,trans),lcols),legend=c("0",paste0(c(">",rep("",length(se)-1)),if(is.numeric(se)){round(se,0)}else{se},c(rep("",length(se)-1),"+"))),y.intersp=0.75,bty="n",title="Density (nb/km2)",border="lightblue",cex=tex*1.3,pt.cex=tex*2.5,pt.lwd=0.5,pch=22,col="lightblue")
   
   ### CV 
 
@@ -583,15 +580,11 @@ for(i in seq_along(lgroup)){
   #legend(2240000,-200000,pch=1,col="lightblue",pt.cex=1.2*mag*(se/max(grid$cv,na.rm=TRUE)),y.intersp=0.75,legend=paste0(c(rep("",length(se)-1),">"),round(se,0)),bty="n",title="CV (%)",cex=tex*1.3)
   cvleg<-strsplit(gsub("\\)|\\(|\\]|\\[","",gsub(","," - ",levels(cutcv)))," - ")
   cvleg<-sapply(cvleg,function(k){paste(gsub(" ","",format(as.numeric(k),nsmall=1,digits=0)),collapse=" - ")})
-  legend(2540000,300000,pch=1,col="lightblue",pt.cex=1.2*cexcv*mag,y.intersp=0.75,legend=cvleg,bty="n",title="CV (%)",cex=tex*1.3,pt.lwd=0.5)
-  
-  
+  legend(2500000,300000,pch=1,col="lightblue",pt.cex=1.2*cexcv*mag,y.intersp=0.75,legend=cvleg,bty="n",title="CV (%)",cex=tex*1.3,pt.lwd=0.5)
   
   ### SAMPLE SIZE
   #text(coordinates(grid)[k,1],coordinates(grid)[k,2],grid$nbsamp[k],cex=tex*0.3,col=alpha("black",0.25))
   
-  
-
   ### LOWER CI
   #points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=mag,col=alpha("#7AAFD1",ifelse(is.na(grid$coll),0,1)))
   #points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=mag,col=grid$coll)
@@ -637,7 +630,6 @@ for(i in seq_along(lgroup)){
   temp<-join(temp,s,type="full")
   
   
-  
   names(tab)[setdiff(seq_along(tab),seq(1,length(tab),by=10))]<-""
   subplot({barplot(tab,las=2,cex.names=0.3,cex.lab=0.3,cex.axis=0.3,yaxt="n",border=NA,ylab="Effort (km)",col="lightblue");
   	        axis(2,cex.axis=0.3,cex.lab=0.3,tcl=-0.1,lwd=0.1,las=2,col.axis="lightblue");
@@ -667,11 +659,11 @@ for(i in seq_along(lgroup)){
   
   
   ### LATITUDES numbers
-  text(xxlat,yylat,paste0(selat,"°N"),xpd=TRUE,cex=tex*0.5,adj=c(-0.35,-1))
+  text(xxlat,yylat[-1],paste0(selat[-1],"°N"),xpd=TRUE,cex=tex*0.5,adj=c(-0.35,-1))
   
   rect(-60001100000,-70000000000,6000000000,-1340000,col=alpha("white",0.4),border=NA)
   #rect(-60001100000,2960000,6000000000,3000000000,col=alpha("white",0.4),border=NA)
-  text(par("usr")[1],-1370000,"These predicted densities are derived from a distance sampling model using Distance 6.0 and the GeoAviR R package with the Eastern Canadian Seabirds-at-Seas database. Detection probabilities have been estimated by species guilds.",cex=tex*0.4,adj=c(0,0.5))
+  text(par("usr")[1],-1370000,"These predicted densities are derived from a distance sampling model using Distance 6.0 and the GeoAviR R package with the Eastern Canadian Seabirds-at-Seas database. Detection probabilities have been estimated by species guilds.",cex=tex*0.4,adj=c(-0.01,0.5))
   
   ### PGRID
   #pgrid(25,cex=0.15)
@@ -700,6 +692,7 @@ opendata<-subset(opendata,select=-c(Parameters))
 row.names(opendata)<-1:nrow(opendata)
 names(opendata)[which(names(opendata)=="Estimates")]<-"Density"
 
+g<-ddply(opendata,.(Region,Month),function(i){unique(i$nbsamp)})
 
 
 # 1-Construire une fonction de détection qui est indépendente des périodes sélectionnées (donc les périodes sont lsub?)
