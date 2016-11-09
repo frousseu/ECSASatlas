@@ -430,10 +430,12 @@ for(i in seq_along(dl)){
 #grid<-spTransform(grid,CRS(laea))
 
 cols<-rev(c("darkred","tomato3","orange","yellow","white"))
-cols<-rev(colo.scale(seq(0,1,by=0.25),c("red","white")))
+cols<-rev(colo.scale(seq(0,1,length.out=5),c("red","white")))
 trans<-0.65
 mag<-1
 tex<-0.6
+monthEN<-c("December to March","April to July","August to November")
+monthFR<-c("Décembre à Mars","Avril à Juillet","Août à Novembre")
 #lgroup<-names(ml)[sample(seq_along(ml),10)]
 lgroup<-"NOFU.04050607"
 ldens<-vector(mode="list",length(lgroup))
@@ -567,7 +569,7 @@ for(i in seq_along(lgroup)){
   	 se<-paste(round(br[-length(br)],1),round(br[-1],1),sep=" - ")
   	 lcols<-alpha(cols,trans)
   }
-  legend(2500000,1300000,pt.bg=c(alpha(NA,trans),lcols),legend=c("0",paste0(c(">",rep("",length(se)-1)),if(is.numeric(se)){round(se,0)}else{se},c(rep("",length(se)-1),"+"))),y.intersp=0.75,bty="n",title="Density (nb/km2)",border="lightblue",cex=tex*1.3,pt.cex=tex*2.5,pt.lwd=0.5,pch=22,col="lightblue")
+  legend(2500000,1300000,pt.bg=c(alpha(NA,trans),lcols),legend=c("0",paste0(c(">",rep("",length(se)-1)),if(is.numeric(se)){round(se,0)}else{se},c(rep("",length(se)-1),"+"))),y.intersp=1,bty="n",title="Density (birds/km2)\nDensité (oiseaux/km2)",border="lightblue",cex=tex*1,pt.cex=tex*2.5,pt.lwd=0.5,pch=22,col="lightblue")
   
   ### CV 
 
@@ -580,7 +582,7 @@ for(i in seq_along(lgroup)){
   #legend(2240000,-200000,pch=1,col="lightblue",pt.cex=1.2*mag*(se/max(grid$cv,na.rm=TRUE)),y.intersp=0.75,legend=paste0(c(rep("",length(se)-1),">"),round(se,0)),bty="n",title="CV (%)",cex=tex*1.3)
   cvleg<-strsplit(gsub("\\)|\\(|\\]|\\[","",gsub(","," - ",levels(cutcv)))," - ")
   cvleg<-sapply(cvleg,function(k){paste(gsub(" ","",format(as.numeric(k),nsmall=1,digits=0)),collapse=" - ")})
-  legend(2500000,300000,pch=1,col="lightblue",pt.cex=1.2*cexcv*mag,y.intersp=0.75,legend=cvleg,bty="n",title="CV (%)",cex=tex*1.3,pt.lwd=0.5)
+  legend(2500000,300000,pch=1,col="lightblue",pt.cex=1.2*cexcv*mag,y.intersp=1,legend=cvleg,bty="n",title="Coefficient of variation\nCoefficient de variation\n(%)",cex=tex*1,pt.lwd=0.5)
   
   ### SAMPLE SIZE
   #text(coordinates(grid)[k,1],coordinates(grid)[k,2],grid$nbsamp[k],cex=tex*0.3,col=alpha("black",0.25))
@@ -598,10 +600,13 @@ for(i in seq_along(lgroup)){
   
   m<-match(group,paste(nbobs$Alpha,nbobs$Month,sep="."))
   sp<-d$English[match(nbobs$Alpha[m],d$Alpha)]
+  
+  mmonth<-match(strsplit(group,"\\.")[[1]][2],month_comb)
+  
   text(1600000,2900000,sp,font=2,adj=c(0,0.5),cex=tex*1.4)
-  text(1600000,2720000,group,adj=c(0,0.5),cex=tex*1.3)
-  text(3650000,2900000,paste("No. obs:",nbobs$nb_obs[m]),adj=c(1,0.5),cex=tex*1.3)
-  text(3650000,2720000,paste("No. samples:",nbobs$nb_sample[m]),adj=c(1,0.5),cex=tex*1.3)
+  text(1600000,2720000,paste0(monthEN[mmonth],"\n",monthFR[mmonth]),adj=c(0,0.5),cex=tex)
+  text(3650000,2900000,paste("No. obs:\nNb obs.",nbobs$nb_obs[m]),adj=c(1,0.5),cex=tex)
+  text(3650000,2720000,paste("No. samples\nTaille d'échantillon:",nbobs$nb_sample[m]),adj=c(1,0.5),cex=tex)
  
 
   ### barplot
@@ -636,7 +641,8 @@ for(i in seq_along(lgroup)){
   	        par(new=TRUE);
   								 barplot(temp$V1/temp$eff,las=2,cex.names=0.3,cex.lab=0.3,yaxt="n",cex.axis=0.3,border=NA,col="darkred");
   	        axis(4,cex.axis=0.3,cex.lab=0.3,tcl=-0.1,lwd=0.1,las=2,col.axis="darkred");
-  	        mtext("Nb ind. / km",side=4,cex=0.3,line=0.2)}
+  	        mtext("birds / km\noiseaux / km",side=4,cex=0.3,line=0.2);
+  	        mtext("Daily effort (km) and raw linear bird densities\nEffort journalier (km) et densités linéaires brutes d'oiseaux",side=3,cex=0.4,line=0.2)}
   								,x=c(2000000, 3450000),y=c(-1150000, -650000))
   
   ### MODULE DE IC HEXAGONAL
@@ -663,7 +669,7 @@ for(i in seq_along(lgroup)){
   
   rect(-60001100000,-70000000000,6000000000,-1340000,col=alpha("white",0.4),border=NA)
   #rect(-60001100000,2960000,6000000000,3000000000,col=alpha("white",0.4),border=NA)
-  text(par("usr")[1],-1370000,"These predicted densities are derived from a distance sampling model using Distance 6.0 and the GeoAviR R package with the Eastern Canadian Seabirds-at-Seas database. Detection probabilities have been estimated by species guilds.",cex=tex*0.4,adj=c(-0.01,0.5))
+  text(par("usr")[1],-1370000,"These predicted densities are derived from a distance sampling model using Distance 6.0 and the GeoAviR R package with the Eastern Canadian Seabirds-at-Sea database. Detection probabilities have been estimated by species guilds. The number of samples corresponds to the number of CruiseID/Date/Cell combination.",cex=tex*0.4,adj=c(-0.01,0.5))
   
   ### PGRID
   #pgrid(25,cex=0.15)
