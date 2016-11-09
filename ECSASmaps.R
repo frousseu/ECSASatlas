@@ -22,7 +22,7 @@ library(leaflet)
 library(xlsx)
 library(classInt)
 library(FRutils)
-load("C:/Users/User/Documents/SCF2016_FR/yo8.RData")
+load("M:/SCF2016_FR/yo9.RData")
 
 
 colo.scale<-function(x,cols=c("white","yellow","tomato3","darkred"),center=TRUE,alpha=1,breaks=NULL){
@@ -430,12 +430,12 @@ for(i in seq_along(dl)){
 #grid<-spTransform(grid,CRS(laea))
 
 cols<-rev(c("darkred","tomato3","orange","yellow","white"))
-cols<-rev(colo.scale(seq(0,1,by=0.25),c("darkred","red","white")))
+cols<-rev(colo.scale(seq(0,1,by=0.25),c("red","white")))
 trans<-0.65
 mag<-1
 tex<-0.6
-lgroup<-names(ml)[sample(seq_along(ml),10)]
-#lgroup<-"NOFU.04050607"
+#lgroup<-names(ml)[sample(seq_along(ml),10)]
+lgroup<-"NOFU.04050607"
 ldens<-vector(mode="list",length(lgroup))
 names(ldens)<-lgroup
 i<-1
@@ -444,7 +444,7 @@ for(i in seq_along(lgroup)){
   
   group<-lgroup[i]
 
-  png(paste0("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps/",gsub("\\.","_",group),".png"),width=6,height=4.8,units="in",res=500)
+  png(paste0("M:/SCF2016_FR/ECSASatlas/maps/",gsub("\\.","_",group),"3.png"),width=6,height=4.8,units="in",res=500)
 
   dens<-density.map(ml[[group]],by.stratum=TRUE)
   temp<-ddply(dl[[group]],.(cell),function(k){length(unique(k$SMP_LABEL))})
