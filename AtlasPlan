@@ -1,0 +1,19 @@
+See open data site.
+
+one parent layer that includes:
+1-Readme file explaining site content, organisation, presentation and methods;
+2-Main shapefile with effort data per cell;
+3-Pdf of all density maps w/short text explaining what it is and methods (EN + FR);
+3.2-Effort map (or added to the atlas pdf);
+3.3-Graph of presence calendar per guild/species (or added to the atlas pdf below);
+4- copy of field protocol.
+
+Child layer(s):
+zipped folders of:
+5- all maps (per season, or all incuded in this zip file?);
+6- all density data;
+7-species codes + density data metadata;
+8- all detection model pdfs;
+
+OR:
+zipped files of the child layer directly added to parent layer... sounds like a better idea.
