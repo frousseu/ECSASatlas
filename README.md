@@ -1,9 +1,13 @@
+
 # ECSASatlas
-Building pelagic bird density maps using ECSAS data
 
-- birds / km2
+*Building pelagic bird density maps using ECSAS data.*
 
-- Coefficient of Varaition
+
+**TODO list**
+
+
+- Coefficient of Variation
 
 - Bilingual
 
@@ -30,3 +34,5 @@ Building pelagic bird density maps using ECSAS data
 - Effort map
 
 - Verify sample vs. stratum vs. date/stratum/cruise vs. date/cruise
+
+- PDF atlas
