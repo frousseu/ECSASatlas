@@ -423,8 +423,11 @@ for(i in seq_along(dl)){
 
 #global.summary.distanceList(model=ml,species=NULL,file="temp",directory="C:/Users/rousseuf/Documents")
 
+
+
+
 #########################################
-### produce figures
+### PRODUCE ATLAS FIGURES
 #########################################
 
 #grid<-spTransform(grid,CRS(laea))
@@ -437,7 +440,7 @@ tex<-0.6
 monthEN<-c("December to March","April to July","August to November")
 monthFR<-c("Décembre à Mars","Avril à Juillet","Août à Novembre")
 #lgroup<-names(ml)[sample(seq_along(ml),10)]
-lgroup<-"NOFU.04050607"
+lgroup<-"NOFU.08091011"
 ldens<-vector(mode="list",length(lgroup))
 names(ldens)<-lgroup
 i<-1
@@ -542,11 +545,6 @@ for(i in seq_along(lgroup)){
   plot(eu,add=TRUE,lwd=0.5,border="grey55")
   plot(na,add=TRUE,lwd=0.5,border="grey55")
   
-  
-  o1<-over(lat,na)
-  o2<-apply(over(lat,eu),1,function(k){all(is.na(k))})
-  plot(lat[!is.na(o1) | !o2],add=TRUE,col="grey30",pch=16,cex=0.01)
-  
   ### bathymetry lines
   plot(gUnionCascaded(b200),border=alpha("black",0.2),add=TRUE,lwd=0.5)
   plot(gUnionCascaded(b1000),border=alpha("black",0.2),add=TRUE,lwd=0.5)
@@ -556,11 +554,14 @@ for(i in seq_along(lgroup)){
   plot(b5000,border=alpha("black",0.2),add=TRUE,lwd=0.5)
   plot(b6000,border=alpha("black",0.2),add=TRUE,lwd=0.5)
   
- 
+  ### SPECIES INFO BOX
   rect(1100000,2600000,3800000,3100000,col=alpha("white",0.4),border=NA)
-  #rect(-2000000,2700000,4000000,3000000,col=alpha("white",0.2),border=NA)
   
   plot(eu[eu$ADMIN=="Greenland",],add=TRUE,lwd=0.1,border="grey55",col="grey75")
+  
+  o1<-over(lat,na)
+  o2<-apply(over(lat,eu),1,function(k){all(is.na(k))})
+  plot(lat[!is.na(o1) | !o2],add=TRUE,col="grey30",pch=16,cex=0.01)
   
   if(is.null(br)){
     se<-seq(r[1],r[2],length.out=7)
@@ -689,10 +690,113 @@ for(i in seq_along(lgroup)){
   
 }
 
+#########################################
+### CALCULATE EFFORT
+#########################################
 
-#######
-#######
-#######
+s<-unique(d[,c("cell","MonthC","SMP_LABEL","SMP_EFFORT")])
+
+s<-ddply(s,.(cell,MonthC),function(i){
+	effort<-sum(i$SMP_EFFORT)
+	nbdays<-nrow(i)
+	data.frame(cell=i$cell[1],MonthC=i$MonthC[1],effort,nbdays)
+})
+
+eg<-expand.grid(cell=unique(grid$id),MonthC=unique(s$MonthC))
+s<-left_join(eg,s)
+s$effort<-ifelse(is.na(s$effort),0,s$effort)
+s$nbdays<-ifelse(is.na(s$nbdays),0,s$nbdays)
+
+#windows()
+#par(mar=c(0,0,0,0),mfrow=c(2,2))
+
+for(i in seq_along(month_comb)[3]){
+	
+	png(paste0("M:/SCF2016_FR/ECSASatlas/maps/",paste0("season",month_comb[i]),".png"),width=6,height=4.8,units="in",res=500)
+	
+	x<-s[s$MonthC==month_comb[i],]
+	
+	m<-match(grid$id,x$cell)
+	grid$effort<-x$effort[m]
+	grid$nbdays<-x$nbdays[m]
+	
+	n<-6
+	cols<-rev(colo.scale(seq(0,1,length.out=n),c("darkred","red","tomato3","yellow","white")))
+	br<-suppressWarnings(classIntervals(unique(c(grid$effort)), n=length(cols), style = "kmeans", rtimes = 1)$brks)
+	#br<-NULL
+	
+	grid$col<-colo.scale(grid$effort,cols=cols,breaks=br)
+
+ ### PLOT
+	par(mar=c(0,0,0,0),mgp=c(0.5,0.1,0))
+	plot(grid,col="white",border="white")
+
+	plot(b0,col=hcl(240,50,l[1]),border=NA,add=TRUE)
+	plot(b200,col=hcl(240,50,l[2]),border=NA,add=TRUE)
+	plot(b1000,col=hcl(240,50,l[3]),border=NA,add=TRUE)
+	plot(b2000,col=hcl(240,50,l[4]),border=NA,add=TRUE)
+	plot(b3000,col=hcl(240,50,l[5]),border=NA,add=TRUE)
+	plot(b4000,col=hcl(240,50,l[6]),border=NA,add=TRUE)
+	plot(b5000,col=hcl(240,50,l[7]),border=NA,add=TRUE)
+	plot(b6000,col=hcl(240,50,l[8]),border=NA,add=TRUE)
+	
+	plot(grid,col=grid$col,border=ifelse(grid$effort<0.001,"lightblue",NA),lwd=0.5,add=TRUE)
+	
+	### bathymetry lines
+	plot(gUnionCascaded(b200),border=alpha("black",0.2),add=TRUE,lwd=0.5)
+	plot(gUnionCascaded(b1000),border=alpha("black",0.2),add=TRUE,lwd=0.5)
+	plot(b2000,border=alpha("black",0.2),add=TRUE,lwd=0.5)
+	plot(b3000,border=alpha("black",0.2),add=TRUE,lwd=0.5)
+	plot(b4000,border=alpha("black",0.2),add=TRUE,lwd=0.5)
+	plot(b5000,border=alpha("black",0.2),add=TRUE,lwd=0.5)
+	plot(b6000,border=alpha("black",0.2),add=TRUE,lwd=0.5)
+	
+	### draw latitudes
+	plot(lat,add=TRUE,col="grey20",pch=16,cex=0.01)
+
+	### plot grid and values
+	plot(eu,add=TRUE,lwd=0.1,border=NA,col="grey75")
+	plot(na,add=TRUE,lwd=0.1,border=NA,col="grey75")
+	
+	### plot shapefiles
+	plot(eu,add=TRUE,lwd=0.1,border=NA,col=alpha("grey75",0.85))
+	plot(na,add=TRUE,lwd=0.1,border=NA,col=alpha("grey75",0.85))
+	
+	plot(eu,add=TRUE,lwd=0.5,border="grey55")
+	plot(na,add=TRUE,lwd=0.5,border="grey55")
+	
+	### SPECIES INFO BOX
+	rect(1100000,2600000,3800000,3100000,col=alpha("white",0.4),border=NA)
+	
+	plot(eu[eu$ADMIN=="Greenland",],add=TRUE,lwd=0.1,border="grey55",col="grey75")
+	
+	plot(lat[!is.na(o1) | !o2],add=TRUE,col="grey30",pch=16,cex=0.01)
+	
+	se<-paste(round(br[-length(br)],0),round(br[-1],0),sep=" - ")
+	lcols<-alpha(cols,trans)
+	legend("bottomright",legend=se,pt.bg=lcols,y.intersp=1,bty="n",title="Effort (km)" ,border="lightblue",cex=tex*1,pt.cex=tex*2.5,pt.lwd=0.5,pch=22,col="lightblue")
+	
+	### LATITUDES numbers
+	text(xxlat,yylat[-1],paste0(selat[-1],"°N"),xpd=TRUE,cex=tex*0.5,adj=c(-0.35,-1))
+	
+	
+	mmonth<-match(month_comb[i],month_comb)
+	
+	text(1600000,2900000,"Effort in Km",font=2,adj=c(0,0.5),cex=tex*1.4)
+	text(1600000,2720000,paste0(monthEN[mmonth],"\n",monthFR[mmonth]),adj=c(0,0.5),cex=tex)
+	
+	
+	
+	dev.off()
+	
+}
+
+
+###########################################
+### OPEN dATA
+###########################################
+
+
 opendata<-do.call("rbind",ldens)
 opendata<-subset(opendata,select=-c(Parameters))
 row.names(opendata)<-1:nrow(opendata)
@@ -701,11 +805,18 @@ names(opendata)[which(names(opendata)=="Estimates")]<-"Density"
 g<-ddply(opendata,.(Region,Month),function(i){unique(i$nbsamp)})
 
 
+write.xlsx(opendata,"M:/SCF2016_FR/ECSASatlas/open_data.xlsx",row.names=FALSE,col.names=TRUE,sheetName="Densities",showNA=FALSE)
+
+write.xlsx(opendata,"M:/SCF2016_FR/ECSASatlas/open_data.xlsx",row.names=FALSE,col.names=TRUE,sheetName="Effort",append=TRUE,showNA=FALSE)
+
+
+
 # 1-Construire une fonction de détection qui est indépendente des périodes sélectionnées (donc les périodes sont lsub?)
 # 2-Pour les espèces rares, utiliser le groupe pour construire la fonction de détection
 # 3-
 
 ### verif dates
+
 
 
 #######################################################################
