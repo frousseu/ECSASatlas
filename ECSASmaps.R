@@ -24,6 +24,11 @@ library(classInt)
 library(FRutils)
 load("M:/SCF2016_FR/yo9.RData")
 
+###########################################
+### INIT
+###########################################
+
+
 
 colo.scale<-function(x,cols=c("white","yellow","tomato3","darkred"),center=TRUE,alpha=1,breaks=NULL){
   w<-which(is.na(x))
@@ -241,9 +246,10 @@ ddply(d2,.(Group,Period),nrow)
 
 
 
-######################################
+
+###########################################
 ### GLOBAL MODELS
-######################################
+###########################################
 
 ### run model without empty transect to only get detection probability and the maximum number of observations compared to 32767
 
@@ -378,9 +384,9 @@ names(ml)<-names(dl)
 ### ADD A TOATL
 
 
-######################################
+###########################################
 ### GROUP MODELS
-######################################
+###########################################
 
 #ALSP.08091011 ne run pas pour une raison obscure
 
@@ -426,9 +432,9 @@ for(i in seq_along(dl)){
 
 
 
-#########################################
+###########################################
 ### PRODUCE ATLAS FIGURES
-#########################################
+###########################################
 
 #grid<-spTransform(grid,CRS(laea))
 
@@ -690,9 +696,9 @@ for(i in seq_along(lgroup)){
   
 }
 
-#########################################
+###########################################
 ### CALCULATE EFFORT
-#########################################
+###########################################
 
 s<-unique(d[,c("cell","MonthC","SMP_LABEL","SMP_EFFORT")])
 
@@ -793,7 +799,7 @@ for(i in seq_along(month_comb)[3]){
 
 
 ###########################################
-### OPEN dATA
+### OPEN DATA
 ###########################################
 
 
@@ -802,12 +808,48 @@ opendata<-subset(opendata,select=-c(Parameters))
 row.names(opendata)<-1:nrow(opendata)
 names(opendata)[which(names(opendata)=="Estimates")]<-"Density"
 
-g<-ddply(opendata,.(Region,Month),function(i){unique(i$nbsamp)})
+#g<-ddply(opendata,.(Region,Month),function(i){unique(i$nbsamp)})
 
+eg<-expand.grid(cell=unique(grid$id),MonthC=unique(s$MonthC))
+x<-left_join(eg,d)
+
+### éliminer les sp
+g<-ddply(x,.(cell,MonthC),function(i){
+	nbspecies<-length(na.omit(unique(i$Alpha))) #éliminer les sp, UN, ALCI, espèces terrestres
+	nbind<-sum(i$Count,na.rm=TRUE)
+	nbobs<-sum(i$Count>0,na.rm=TRUE)
+	nbdays<-length(na.omit(unique(i$Date)))
+	nbsamples<-length(na.omit(unique(i$SMP_LABEL)))
+	nbkm<-sum(i$SMP_EFFORT[!duplicated(i$SMP_LABEL)],na.rm=TRUE)
+	nbcruiseID<-length(na.omit(unique(i$CruiseID)))
+	nbships<-length(na.omit(unique(i$PlatformName)))
+	data.frame(cell=i$cell[1],MonthC=i$MonthC[1],nbspecies,nbobs,nbind,nbsamples,nbkm,nbships,nbcruiseID,nbdays)
+})
+
+
+
+g<-ddply(s,.(cell,MonthC),function(i){
+	effort<-sum(i$SMP_EFFORT)
+	nbdays<-nrow(i)
+	data.frame(cell=i$cell[1],MonthC=i$MonthC[1],effort,nbdays)
+})
+
+
+
+
+
+###########################################
+### WRITE FILES FOR OPEN DATA
+###########################################
 
 write.xlsx(opendata,"M:/SCF2016_FR/ECSASatlas/open_data.xlsx",row.names=FALSE,col.names=TRUE,sheetName="Densities",showNA=FALSE)
 
-write.xlsx(opendata,"M:/SCF2016_FR/ECSASatlas/open_data.xlsx",row.names=FALSE,col.names=TRUE,sheetName="Effort",append=TRUE,showNA=FALSE)
+write.xlsx(g,"M:/SCF2016_FR/ECSASatlas/open_data.xlsx",row.names=FALSE,col.names=TRUE,sheetName="Effort",append=TRUE,showNA=FALSE)
+
+writeOGR(grid[,"id"],dsn="M:/SCF2016_FR/ECSASatlas",layer="atlas_grid",driver="ESRI Shapefile")
+
+zip("M:/SCF2016_FR/ECSASatlas/atlas_images",list.files("M:/SCF2016_FR/ECSASatlas/maps",full.names=TRUE,pattern=".png")[1:2])
+
 
 
 
@@ -819,9 +861,9 @@ write.xlsx(opendata,"M:/SCF2016_FR/ECSASatlas/open_data.xlsx",row.names=FALSE,co
 
 
 
-#######################################################################
+###########################################
 ### produce a plot by OBS/Mission to detect wrong patterns of detection
-#######################################################################
+###########################################
 
 keep<-ddply(d,.(Observer1,CruiseID),nrow)
 keep<-ddply(d,.(Observer1,CruiseID),function(i){any(which(i$Count>1))})
