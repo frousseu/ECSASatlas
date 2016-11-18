@@ -22,64 +22,11 @@ library(leaflet)
 library(xlsx)
 library(classInt)
 library(FRutils)
-load("M:/SCF2016_FR/yo9.RData")
+load("C:/Users/User/Documents/SCF2016_FR/yo9.RData")
 
 ###########################################
 ### INIT
 ###########################################
-
-
-
-colo.scale<-function(x,cols=c("white","yellow","tomato3","darkred"),center=TRUE,alpha=1,breaks=NULL){
-  w<-which(is.na(x))
-  if(any(w)){
-    y<-x[-w]
-  }else{
-    y<-x
-  }
-  
-  re<-function(a){
-    if(any(w)){
-      ans<-rep(NA,length(x))
-      ans[which(!is.na(x))]<-a
-      ans
-    }else{
-      a
-    }
-  }
-  
-  if(!is.null(breaks)){
-    stopifnot((length(cols)+1)==length(breaks))
-    return(re(cols[as.numeric(cut(y,breaks=breaks))]))
-  }
-
-  if(length(y)==1){
-    colop<-colorRampPalette(cols)
-    return(re(colop(y)))
-  }  
-  if(class(y)=="character"){
-    colop<-colorRampPalette(cols)
-    color<-colop(length(unique(y)))
-    return(re(color[match(y,unique(y))]))
-  }else{  
-    if(all(y>=0 & y<=1)){
-      color<-rgb(colorRamp(cols)(y),maxColorValue=256)
-      return(re(color))
-    }else{
-      if(any(y<0) && center){
-        m<-which.max(c(abs(min(y)),max(y)))     
-        sca<-0.5/ifelse(m==1,abs(min(y)),max(y))     
-        xx<-sca*y+0.5
-        color<-rgb(colorRamp(cols)(xx),maxColorValue=256) 
-        return(re(color))
-      }else{
-        color<-rgb(colorRamp(cols)((max(y)-y)/(max(y)-min(y))),maxColorValue=256) 
-        return(re(color))
-      }
-    }
-  }
-  
-}
 
 
 pathECSAS<-"C:/Users/User/Documents/SCF2016_FR/ECSASdata"
@@ -437,6 +384,8 @@ for(i in seq_along(dl)){
 ###########################################
 
 #grid<-spTransform(grid,CRS(laea))
+#reg_atl<-readOGR("C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ATLBioregions",verbose=FALSE)
+#reg_atl<-spTransform(reg_atl,CRS(proj4string(grid)))
 
 cols<-rev(c("darkred","tomato3","orange","yellow","white"))
 cols<-rev(colo.scale(seq(0,1,length.out=5),c("red","white")))
@@ -455,7 +404,7 @@ for(i in seq_along(lgroup)){
   
   group<-lgroup[i]
 
-  png(paste0("M:/SCF2016_FR/ECSASatlas/maps/",gsub("\\.","_",group),"3.png"),width=6,height=4.8,units="in",res=500)
+  png(paste0("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps/",gsub("\\.","_",group),"3.png"),width=6,height=4.8,units="in",res=500)
 
   dens<-density.map(ml[[group]],by.stratum=TRUE)
   temp<-ddply(dl[[group]],.(cell),function(k){length(unique(k$SMP_LABEL))})
@@ -543,6 +492,8 @@ for(i in seq_along(lgroup)){
   #plot(grid[k,],col=grid$col[k],border=ifelse(is.na(grid$col[k]),alpha("lightblue",trans),NA),add=TRUE,lwd=0.5)
   plot(gholes[k],col=grid$col[k],border=ifelse(is.na(grid$col[k]),alpha("lightblue",trans),NA),add=TRUE,lwd=0.5)
   
+  
+  plot(reg_atl,border=alpha("darkgreen",0.25),lwd=2,add=TRUE)
   
   ### plot shapefiles
   plot(eu,add=TRUE,lwd=0.1,border=NA,col=alpha("grey75",0.85))
