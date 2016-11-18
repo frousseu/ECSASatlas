@@ -47,7 +47,7 @@
 %\renewcommand{\headrule}{\hbox to\headwidth{%
 	%    \color{black!100}\leaders\hrule height \headrulewidth\hfill}}
 \title{\vspace{3cm}\LARGE{\textbf{Density of Seabirds Using ECSAS\newline Survey Data 2004 - 2016}}\vspace{5cm}}
-\author{\textbf{Francois Rousseu} and \textbf{Francois Bolduc\footnote{Environnement et changement climatique Canada, Canadian Wildlife Service, 801-1550, avenue d'Estimauville, Québec, Québec, G1J 0C3. \href{mailto:francois.bolduc@canada.ca}{francois.bolduc@canada.ca}}}\vspace{5cm}}
+\author{\textbf{Francois Rousseu} and \textbf{Francois Bolduc\footnote{Environnement et changement climatique Canada, Canadian Wildlife Service, 801-1550, avenue d'Estimauville, Qu?bec, Qu?bec, G1J 0C3. \href{mailto:francois.bolduc@canada.ca}{francois.bolduc@canada.ca}}}\vspace{5cm}}
 	%\date{\today}
 	\date{}
 	%\usepackage{subfig}
@@ -105,11 +105,18 @@
 	
 	\tableofcontents
 	
-	%\section{Introduction}
+	\section{Introduction}
 	
-	%\section{Detailed description}
+	\subsection{Data summary}
 	
-	%\subsection{1st panel}
+	\subsection{Seasonal abundance}
+	
+	\section{Methods and Results}
+	
+	\subsection{Model ouputs}
+	
+	
+
 	
 	%\subsection{2nd panel}
 	
@@ -120,12 +127,12 @@
 	%\section{Code description}
 	
 	<<packages, echo=FALSE, message=FALSE, warning=FALSE>>=
-	#library(sp)
+	library(sp)
 	#library(lme4)
 	#library(nlme)
 	#library(svMisc)
 	#library(ggplot2)
-	#library(plyr)
+	library(plyr)
 	#library(gam)
 	#library(mgcv)
 	#library(animation)
@@ -133,17 +140,17 @@
 	#library(quantreg)
 	#library(gplots)
 	#library(foreign)
-	#library(maptools)
+	library(maptools)
 	#library(scales)
-	#library(rgdal)
-	#library(RColorBrewer)
-	#library(rgeos)
+	library(rgdal)
+	library(RColorBrewer)
+	library(rgeos)
 	#library(vegan)
 	#library(ggplot2)
 	##library(cwhmisc)
-	#library(data.table)
+	library(data.table)
 	#library(png)
-	#library(xtable)
+	library(xtable)
 	#library(jpeg)
 	#library(TeachingDemos)
 	#library(magrittr)
@@ -151,7 +158,76 @@
 	
 	#sg<-read.csv("C:/Users/User/Documents/NestingPhenologySCF/new/Species_grouping2.csv",header=T,stringsAsFactors=F)
 	
-	@
+	load("C:/Users/User/Documents/SCF2016_FR/yo9.RData")
+
+@	
+
+
+<<region_atlantic, echo=FALSE, message=FALSE, warning=FALSE>>=
+	
+	
+reg<-readOGR("C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ATLBioregions",verbose=FALSE)
+par(mar=c(1,1,1,1))
+plot(reg)
+box()
+	
+@
+
+
+	
+<<nbobs, echo=FALSE, message=FALSE, warning=FALSE, results="asis">>=
+	
+	
+	cap<-"Number of observations per group and per season."
+	res<-ddply(d,.(Group,MonthC),nrow)
+	tab<-xtable(res,caption=cap)
+	print(tab,include.rownames=FALSE,caption.placement="top")
+	
+@
+
+
+<<seasonal_presence, echo=FALSE, message=FALSE, warning=FALSE, results="asis">>=
+	
+	
+	cap<-""
+	
+	ds<-SpatialPoints(cbind(d$LongStart,d$LatStart),CRS(ll))
+	ds<-spTransform(ds,CRS(proj4string(reg)))
+	o<-over(ds,reg[1,])
+	
+	x<-as.data.table(d[!is.na(o[,1]),])
+	y<-unique(x[,.(Month,SMP_LABEL,SMP_EFFORT)])
+	y<-y[,.(month_effort=sum(SMP_EFFORT)),by=.(Month)]
+	x$month_effort<-y$month_effort[match(x$Month,y$Month)]
+	x<-x[,.(dens=(sum(Count,na.rm=TRUE)/unique(month_effort))),by=.(Group,Month)]
+	
+ res<-x
+ 
+ 
+	
+ res<-merge(expand.grid(Group=unique(res$Group),Month=unique(res$Month),stringsAsFactors=FALSE),res,all.x=TRUE)
+ r<-range(as.numeric(res$Month))
+ res$Month<-factor(res$Month,levels=formatC(seq(r[1],r[2],by=1),width=2,flag=0))
+ res$dens<-ifelse(is.na(res$dens),0,res$dens)
+ res<-res[order(res$Group,res$Month),]
+ res<-res[res$Group!="",]
+ 
+ 
+ 
+ g<-unique(res$Group)
+ options(scipen=20)
+ plot(as.numeric(res$Month),res$dens,type="n",xaxt="n",las=2,log="y")
+ sapply(seq_along(g),function(i){
+   x<-res[res$Group==g[i],]
+ 	 lines(x$dens,col=brewer.pal(length(g),"Paired")[i],lwd=6)
+ })
+ axis(1,at=seq_along(levels(res$Month)),label=levels(res$Month))
+ legend("top",legend=g,lwd=6,col=brewer.pal(length(g),"Paired"),bty="n",horiz=TRUE)
+	
+	
+	
+@
+
 	
 	\clearpage
 	\section{Species Accounts}
