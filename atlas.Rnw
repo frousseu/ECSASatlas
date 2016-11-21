@@ -126,7 +126,7 @@
 	
 	%\section{Code description}
 	
-	<<packages, echo=FALSE, message=FALSE, warning=FALSE>>=
+	<<packages, echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE>>=
 	library(sp)
 	#library(lme4)
 	#library(nlme)
@@ -141,7 +141,7 @@
 	#library(gplots)
 	#library(foreign)
 	library(maptools)
-	#library(scales)
+	library(scales)
 	library(rgdal)
 	library(RColorBrewer)
 	library(rgeos)
@@ -152,7 +152,7 @@
 	#library(png)
 	library(xtable)
 	#library(jpeg)
-	#library(TeachingDemos)
+	library(TeachingDemos)
 	#library(magrittr)
 	#library(Hmisc)
 	
@@ -163,7 +163,7 @@
 @	
 
 
-<<region_atlantic, echo=FALSE, message=FALSE, warning=FALSE>>=
+<<region_atlantic, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE>>=
 	
 	
 reg<-readOGR("C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ATLBioregions",verbose=FALSE)
@@ -174,68 +174,106 @@ box()
 @
 
 
-	
-<<nbobs, echo=FALSE, message=FALSE, warning=FALSE, results="asis">>=
+\clearpage	
+<<nbobs, echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE, results="asis">>=
 	
 	
 	cap<-"Number of observations per group and per season."
 	res<-ddply(d,.(Group,MonthC),nrow)
+	res<-res[res$Group!="",]
 	tab<-xtable(res,caption=cap)
 	print(tab,include.rownames=FALSE,caption.placement="top")
 	
 @
 
-
-<<seasonal_presence, echo=FALSE, message=FALSE, warning=FALSE, results="asis">>=
+\clearpage
+<<seasonal_presence, eval=TRUE, cache=TRUE, echo=FALSE, message=FALSE, warning=FALSE, results="asis">>=
 	
 	
 	cap<-""
-	
+	n<-1:3
 	ds<-SpatialPoints(cbind(d$LongStart,d$LatStart),CRS(ll))
 	ds<-spTransform(ds,CRS(proj4string(reg)))
-	o<-over(ds,reg[1,])
 	
-	x<-as.data.table(d[!is.na(o[,1]),])
-	y<-unique(x[,.(Month,SMP_LABEL,SMP_EFFORT)])
-	y<-y[,.(month_effort=sum(SMP_EFFORT)),by=.(Month)]
-	x$month_effort<-y$month_effort[match(x$Month,y$Month)]
-	x<-x[,.(dens=(sum(Count,na.rm=TRUE)/unique(month_effort))),by=.(Group,Month)]
+	for(i in n){
 	
- res<-x
- 
- 
+	  o<-over(ds,reg[n[i],])
 	
- res<-merge(expand.grid(Group=unique(res$Group),Month=unique(res$Month),stringsAsFactors=FALSE),res,all.x=TRUE)
- r<-range(as.numeric(res$Month))
- res$Month<-factor(res$Month,levels=formatC(seq(r[1],r[2],by=1),width=2,flag=0))
- res$dens<-ifelse(is.na(res$dens),0,res$dens)
- res<-res[order(res$Group,res$Month),]
- res<-res[res$Group!="",]
- 
- 
- 
- g<-unique(res$Group)
- options(scipen=20)
- plot(as.numeric(res$Month),res$dens,type="n",xaxt="n",las=2,log="y")
- sapply(seq_along(g),function(i){
-   x<-res[res$Group==g[i],]
- 	 lines(x$dens,col=brewer.pal(length(g),"Paired")[i],lwd=6)
- })
- axis(1,at=seq_along(levels(res$Month)),label=levels(res$Month))
- legend("top",legend=g,lwd=6,col=brewer.pal(length(g),"Paired"),bty="n",horiz=TRUE)
+	  x<-as.data.table(d[!is.na(o[,1]),])
+	  y<-unique(x[,.(Month,SMP_LABEL,SMP_EFFORT)])
+	  y<-y[,.(month_effort=sum(SMP_EFFORT)),by=.(Month)]
+	  x$month_effort<-y$month_effort[match(x$Month,y$Month)]
+	  x<-x[,.(dens=(sum(Count,na.rm=TRUE)/unique(month_effort))),by=.(Group,Month)]
 	
-	
+   res<-x
+
+   res<-merge(expand.grid(Group=unique(res$Group),Month=unique(res$Month),stringsAsFactors=FALSE),res,all.x=TRUE)
+   r<-range(as.numeric(res$Month))
+   res$Month<-factor(res$Month,levels=formatC(seq(r[1],r[2],by=1),width=2,flag=0))
+   res$dens<-ifelse(is.na(res$dens),0,res$dens)
+   res<-res[order(res$Group,res$Month),]
+   res<-res[res$Group!="",]
+ 
+   f<-function(x){log(x+0.001)}
+   #f<-function(x){x}
+   
+   g<-unique(res$Group)
+   options(scipen=20)
+   par(mar=c(4,5,5,1))
+   plot(as.numeric(res$Month),f(res$dens),type="n",xaxt="n",yaxt="n",las=2,xlab="",ylab="")
+   
+   subplot({plot(reg,col=ifelse(is.na(match(n,n[i])),NA,"grey85"),border="grey85",lwd=1)},pars=list(mar=c(0,0,0,0)),x=par("usr")[1:2],y=par("usr")[3:4],hadj=0,vadj=0,inset=c(0.1,0.1),size=c(2,2))
+   
+   invisible(sapply(seq_along(g),function(k){
+     x<-res[res$Group==g[k],]
+   	 lines(f(x$dens),col=brewer.pal(length(g),"Paired")[k],lwd=5)
+   }))
+   axis(1,at=seq_along(levels(res$Month)),label=levels(res$Month))
+   se<-sort(c(0.05,0.005,seq(0,max(res$dens),by=0.5)))
+   selog<-f(se)
+   axis(2,at=selog,label=se,las=2)
+   legend("topleft",inset=c(0,-0.15),legend=g,lwd=5,col=brewer.pal(length(g),"Paired"),horiz=FALSE,ncol=3,bty="n",xpd=TRUE)
+  	mtext("Month",side=1,line=3)
+  	mtext("Linear Density (birds / km)",side=2,line=4)
+
+	 }
 	
 @
 
+
+\clearpage
+<<effort_maps, cache=FALSE, eval=TRUE, include=TRUE, echo=FALSE, message=FALSE, fig.height=4.5,fig.width=6.5, results='asis'>>=
+
+		x<-list.files("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps")
+	x<-x[grep("season",x)]
+	x2<-gsub("\\.|_","",x)
 	
+	#m<-order(match(substr(x,1,4),sg$Species_ID))
+	#x<-x[m]
+	pos<-1
+	for(i in seq_along(x)){  
+	#if(pos%%2==1 && i>1){
+	#  cat("\\vspace{-0.1cm}\n")    
+	#}
+	cat(paste0("\\subsubsection*{",x2[i],"}\n"))
+	cat(paste0("\\addcontentsline{toc}{subsubsection}{",x2[i],"}\n"))
+	cat("\\vspace{-1.3cm}\n")
+	cat(paste0("\\label{",x2[i],"}\n"))
+	cat(paste0("\\index{",x2[i],"}\n")) 
+	cat(paste0("\\includegraphics[width=\\textwidth, scale=1, trim=0 0 0 0, clip]{C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps/",gsub(".png","",x[i]),"}\n"))  
+	pos<-pos+1
+	}
+	
+@
+
+
 	\clearpage
 	\section{Species Accounts}
 	<<png, cache=FALSE, eval=TRUE, include=TRUE, echo=FALSE, message=FALSE, fig.height=4.5,fig.width=6.5, results='asis'>>=
 	
 	
 	x<-list.files("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps")
-	#x<-x[grep("_eng2",x)]
+	x<-x[-grep("season",x)]
 	x2<-gsub("\\.|_","",x)
 	
 	#m<-order(match(substr(x,1,4),sg$Species_ID))
