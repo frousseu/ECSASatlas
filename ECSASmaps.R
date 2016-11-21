@@ -667,9 +667,9 @@ s$nbdays<-ifelse(is.na(s$nbdays),0,s$nbdays)
 #windows()
 #par(mar=c(0,0,0,0),mfrow=c(2,2))
 
-for(i in seq_along(month_comb)[3]){
+for(i in seq_along(month_comb)[1:2]){
 	
-	png(paste0("M:/SCF2016_FR/ECSASatlas/maps/",paste0("season",month_comb[i]),".png"),width=6,height=4.8,units="in",res=500)
+	png(paste0("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps/",paste0("season",month_comb[i]),".png"),width=6,height=4.8,units="in",res=500)
 	
 	x<-s[s$MonthC==month_comb[i],]
 	
