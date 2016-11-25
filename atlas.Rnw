@@ -226,13 +226,13 @@ box()
    
    invisible(sapply(seq_along(g),function(k){
      x<-res[res$Group==g[k],]
-   	 lines(f(x$dens),col=brewer.pal(length(g),"Paired")[k],lwd=5)
+   	 lines(f(x$dens),col=alpha(brewer.pal(length(g),"Paired"),0.5)[k],lwd=5)
    }))
    axis(1,at=seq_along(levels(res$Month)),label=levels(res$Month))
    se<-sort(c(0.05,0.005,seq(0,max(res$dens),by=0.5)))
    selog<-f(se)
    axis(2,at=selog,label=se,las=2)
-   legend("topleft",inset=c(0,-0.15),legend=g,lwd=5,col=brewer.pal(length(g),"Paired"),horiz=FALSE,ncol=3,bty="n",xpd=TRUE)
+   legend("topleft",inset=c(0,-0.15),legend=g,lwd=5,col=alpha(brewer.pal(length(g),"Paired"),0.5),horiz=FALSE,ncol=3,bty="n",xpd=TRUE)
   	mtext("Month",side=1,line=3)
   	mtext("Linear Density (birds / km)",side=2,line=4)
 
