@@ -33,6 +33,7 @@ pathECSAS<-"C:/Users/User/Documents/SCF2016_FR/ECSASdata"
 fileECSAS<-"Master ECSAS v 3.46.mdb"
 groupings<-as.data.frame(read_excel("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/groupingsSOMEC.xlsx",sheet="groups"))
 
+
 groupings<-as.data.frame(read_excel("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/groupingsSOMEC.xlsx",sheet="groups"))
 periods<-as.data.frame(read_excel("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/groupingsSOMEC.xlsx",sheet="periods"))
 periods$Start<-substr(periods$Start,6,10)
@@ -399,7 +400,7 @@ tex<-0.6
 monthEN<-c("December to March","April to July","August to November")
 monthFR<-c("Décembre à Mars","Avril à Juillet","Août à Novembre")
 #lgroup<-names(ml)
-lgroup<-"NOFU.08091011"
+lgroup<-c("BLKI.04050607")
 ldens<-vector(mode="list",length(lgroup))
 names(ldens)<-lgroup
 i<-1
@@ -434,6 +435,7 @@ for(i in seq_along(lgroup)){
   r<-range(c(grid$val),na.rm=TRUE)
 
   br<-suppressWarnings(classIntervals(unique(c(grid$val)), n=length(cols), style = "kmeans", rtimes = 1)$brks)
+  br2<-suppressWarnings(classIntervals(unique(c(grid$val)), n=length(cols), style = "quantile", rtimes = 1)$brks) #put this on graph to study quantile compared to kmeans
   #br<-NULL
   
   grid$col<-colo.scale(c(r,grid$val),cols=cols,breaks=br)[-(1:2)]
@@ -517,6 +519,7 @@ for(i in seq_along(lgroup)){
   
   ### SPECIES INFO BOX
   rect(1100000,2260000,3800000,3100000,col=alpha("white",0.4),border=NA)
+  rect(1100000,2680000,3800000,3100000,col=alpha("white",0.4),border=NA)
   
   plot(eu[eu$ADMIN=="Greenland",],add=TRUE,lwd=0.1,border="grey55",col="grey75")
   
@@ -524,31 +527,31 @@ for(i in seq_along(lgroup)){
   o2<-apply(over(lat,eu),1,function(k){all(is.na(k))})
   plot(lat[!is.na(o1) | !o2],add=TRUE,col="grey30",pch=16,cex=0.01)
   
-  ### LEGEND DENSITY
-  if(is.null(br)){
-    se<-seq(r[1],r[2],length.out=7)
-    lcols<-rev(alpha(tail(colo.scale(c(grid$val,se),cols=rev(cols),breaks=br),length(se)),trans))
-  }else{
-  	 se<-paste(round(br[-length(br)],1),round(br[-1],1),sep=" - ")
-  	 lcols<-alpha(cols,trans)
-  }
-  l<-legend(2650000,1400000,legend=c("0",paste0(c(">",rep("",length(se)-1)),if(is.numeric(se)){round(se,0)}else{se},c(rep("",length(se)-1),"+"))),y.intersp=1.2,bty="n",title="Density (birds/km2)\nDensité (oiseaux/km2)",cex=tex*1)
-  
-  ### add hexagonal density markers
-  for(j in seq_along(l$text$x)){
-    X<-l$text$x[j]
-    Y<-l$text$y[j]
-    shift<-c(X-coordinates(hex)[1,1],Y-coordinates(hex)[1,2])-c(100000,-7000)
-    cols<-c(NA,lcols)[j]
-    bord<-c("lightblue",rep(NA,length(lcols)))[j]
-    plot(elide(hex,shift=shift,rotate=10),col=cols,add=TRUE,border=bord,lwd=0.5)
-  }
-  
-  
-  
-  ### CV 
-  ### LEGEND CV
-  #####points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=mag*(grid$cv/max(grid$cv,na.rm=TRUE)),col="white")
+	  ### LEGEND DENSITY
+	  if(is.null(br)){
+	    se<-seq(r[1],r[2],length.out=7)
+	    lcols<-rev(alpha(tail(colo.scale(c(grid$val,se),cols=rev(cols),breaks=br),length(se)),trans))
+	  }else{
+	  	 se<-paste(round(br[-length(br)],1),round(br[-1],1),sep=" - ")
+	  	 lcols<-alpha(cols,trans)
+	  }
+	  l<-legend(2500000,1400000,title.adj=0,legend=c("0",paste0(c(">",rep("",length(se)-1)),if(is.numeric(se)){round(se,0)}else{se},c(rep("",length(se)-1),"+"))),y.intersp=1.2,bty="n",title="Density (birds/km2)\nDensité (oiseaux/km2)",cex=tex*1)
+	  
+	  ### add hexagonal density markers
+	  for(j in seq_along(l$text$x)){
+	    X<-l$text$x[j]
+	    Y<-l$text$y[j]
+	    shift<-c(X-coordinates(hex)[1,1],Y-coordinates(hex)[1,2])-c(100000,-7000)
+	    col<-c(NA,lcols)[j]
+	    bord<-c("lightblue",rep(NA,length(lcols)))[j]
+	    plot(elide(hex,shift=shift,rotate=10),col=col,add=TRUE,border=bord,lwd=0.5)
+	  }
+	  
+	  
+	  
+	  ### CV 
+	  ### LEGEND CV
+	  #####points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=mag*(grid$cv/max(grid$cv,na.rm=TRUE)),col="white")
   #points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=grid$cex,col="#7AAFD1")
   ##points(coordinates(grid)[,1],coordinates(grid)[,2],pch=1,cex=mag*(grid$cv/max(grid$cv,na.rm=TRUE)),col=alpha("green",0.8))
   #####points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=mag*(grid$cv/max(grid$cv,na.rm=TRUE)),col=alpha("black",0.5))
@@ -557,13 +560,12 @@ for(i in seq_along(lgroup)){
   #legend(2240000,-200000,pch=1,col="lightblue",pt.cex=1.2*mag*(se/max(grid$cv,na.rm=TRUE)),y.intersp=0.75,legend=paste0(c(rep("",length(se)-1),">"),round(se,0)),bty="n",title="CV (%)",cex=tex*1.3)
   cvleg<-strsplit(gsub("\\)|\\(|\\]|\\[","",gsub(","," - ",levels(cutcv)))," - ")
   cvleg<-c("N/A (n = 1)",sapply(cvleg,function(k){paste(gsub(" ","",format(as.numeric(k),nsmall=1,digits=0)),collapse=" - ")}))
-  l<-legend(2500000,410000,y.intersp=1.2,legend=cvleg,bty="n",title="Coefficient of variation\nCoefficient de variation (%)",cex=tex*1)
-  
+  l<-legend(2500000,410000,,adj=c(0,1),title.adj=0,y.intersp=1.2,legend=cvleg,bty="n",title="Coefficient of variation\nCoefficient de variation (%)",cex=tex*1)
+
   for(j in seq_along(l$text$x)){
   	X<-l$text$x[j]
   	Y<-l$text$y[j]
   	shift<-c(X-coordinates(hex)[1,1],Y-coordinates(hex)[1,2])-c(100000,-7000)
-  	cols<-c(NA,lcols)[j]
   	bord<-c("lightblue",rep(NA,length(lcols)))[j]
   	width<-c(0.001,cexcv)[j]*40000 # on ajoute une explication et un "fake" buffer de 0.001 pour illustrer l'absence de trous et sa signification
   	hhex<-gBuffer(SpatialPoints(coordinates(hex),proj4string=CRS(proj4string(grid))),width=width,byid=TRUE) # the buffer width value needs to be adjusted manually with the cex of the legend
@@ -589,11 +591,12 @@ for(i in seq_along(lgroup)){
   m<-match(group,paste(nbobs$Alpha,nbobs$Month,sep="."))
   sp<-d$English[match(nbobs$Alpha[m],d$Alpha)]
   splat<-d$Latin[match(nbobs$Alpha[m],d$Alpha)]
+  spfr<-qc$NomFR[match(nbobs$Alpha[m],qc$CodeAN)]
   
   mmonth<-match(strsplit(group,"\\.")[[1]][2],month_comb)
   
   text(3600000,2930000,sp,font=2,adj=c(1,0.5),cex=tex*1.4)
-  text(3600000,2780000,splat,font=2,adj=c(1,0.5),cex=tex*1.4)
+  text(3600000,2780000,spfr,font=2,adj=c(1,0.5),cex=tex*1.4)
   text(3600000,2600000,paste0(monthEN[mmonth]," / ",monthFR[mmonth]),adj=c(1,0.5),cex=tex)
   text(3600000,2480000,paste("No. obs. / Nb obs. :  ",nbobs$nb_obs[m]),adj=c(1,0.5),cex=tex)
   text(3600000,2360000,paste("No. samples / Taille d'échantillon :  ",nbobs$nb_sample[m]),adj=c(1,0.5),cex=tex)
@@ -633,7 +636,7 @@ for(i in seq_along(lgroup)){
   	        axis(4,cex.axis=0.3,cex.lab=0.3,tcl=-0.1,lwd=0.1,las=2,col.axis="red");
   	        mtext("birds / km\noiseaux / km",side=4,cex=0.3,line=0.2);
   	        mtext("Daily effort (km) and raw linear bird densities\nEffort journalier (km) et densités linéaires brutes d'oiseaux",side=3,cex=0.4,line=0.2)}
-  								,x=c(2000000, 3450000),y=c(-1150000, -750000))
+  								,x=c(1700000, 3450000),y=c(-1150000, -750000))
   
   ### MODULE DE IC HEXAGONAL
   #cent<-2500000
