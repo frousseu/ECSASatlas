@@ -123,8 +123,12 @@ eu<-readOGR(dsn="C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_ad
 eu<-eu[eu$GEOUNIT%in%c("Greenland","Iceland","United Kingdom","Ireland","France","Spain","Portugal"),]
 eu<-spTransform(eu,CRS(laea))
 na<-readOGR(dsn="C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_admin_1_states_provinces",encoding="UTF-8")
+na<-na[na$admin%in%c("United States of America","Canada"),]
 na<-gIntersection(na,bbox2pol(na,ex=-1),byid=TRUE)
 na<-spTransform(na,CRS(laea))
+gl<-readOGR(dsn="C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_lakes",encoding="UTF-8")
+gl<-gl[gl$name%in%c("Lake Ontario","Lake Huron","Lake Erie","Lake Michigan","Lake Superior"),]
+gl<-spTransform(gl,CRS(laea))
 
 
 pathshp<-"C:/Users/User/Documents/SCF2016_FR/shapefiles"
@@ -384,6 +388,9 @@ for(i in seq_along(dl)){
 ### PRODUCE ATLAS FIGURES
 ###########################################
 
+
+#grid2<-spTransform(grid2,CRS(laea))
+
 #grid<-spTransform(grid,CRS(laea))
 #reg_atl<-readOGR("C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ATLBioregions",verbose=FALSE)
 #reg_atl<-spTransform(reg_atl,CRS(proj4string(grid)))
@@ -400,7 +407,7 @@ tex<-0.6
 monthEN<-c("December to March","April to July","August to November")
 monthFR<-c("Décembre à Mars","Avril à Juillet","Août à Novembre")
 #lgroup<-names(ml)
-lgroup<-c("BLKI.04050607")
+lgroup<-c("DOVE.08091011")
 ldens<-vector(mode="list",length(lgroup))
 names(ldens)<-lgroup
 i<-1
@@ -504,6 +511,7 @@ for(i in seq_along(lgroup)){
   ### plot shapefiles
   plot(eu,add=TRUE,lwd=0.1,border=NA,col=alpha("grey75",0.85))
   plot(na,add=TRUE,lwd=0.1,border=NA,col=alpha("grey75",0.85))
+  plot(gl,col=hcl(240,50,l[1]),border=NA,add=TRUE)
   
   plot(eu,add=TRUE,lwd=0.5,border="grey55")
   plot(na,add=TRUE,lwd=0.5,border="grey55")
@@ -519,7 +527,7 @@ for(i in seq_along(lgroup)){
   
   ### SPECIES INFO BOX
   rect(1100000,2260000,3800000,3100000,col=alpha("white",0.4),border=NA)
-  rect(1100000,2680000,3800000,3100000,col=alpha("white",0.4),border=NA)
+  rect(1100000,2680000,3800000,3100000,col=alpha("white",0.25),border=NA)
   
   plot(eu[eu$ADMIN=="Greenland",],add=TRUE,lwd=0.1,border="grey55",col="grey75")
   
@@ -532,19 +540,25 @@ for(i in seq_along(lgroup)){
 	    se<-seq(r[1],r[2],length.out=7)
 	    lcols<-rev(alpha(tail(colo.scale(c(grid$val,se),cols=rev(cols),breaks=br),length(se)),trans))
 	  }else{
-	  	 se<-paste(round(br[-length(br)],1),round(br[-1],1),sep=" - ")
+	  	 se<-paste(format(round(br[-length(br)],1),nsmall=1,digits=0),format(round(br[-1],1),nsmall=1,digits=0),sep=" - ")
+	  	 se2<-paste(round(br2[-length(br2)],1),round(br2[-1],1),sep=" - ") #illustrate results with quantiles instead
 	  	 lcols<-alpha(cols,trans)
 	  }
-	  l<-legend(2500000,1400000,title.adj=0,legend=c("0",paste0(c(">",rep("",length(se)-1)),if(is.numeric(se)){round(se,0)}else{se},c(rep("",length(se)-1),"+"))),y.intersp=1.2,bty="n",title="Density (birds/km2)\nDensité (oiseaux/km2)",cex=tex*1)
+   deleg<-c("0",paste0(c(">",rep("",length(se)-1)),if(is.numeric(se)){round(se,0)}else{se}))
+   deleg2<-c("0",paste0(c(">",rep("",length(se2)-1)),if(is.numeric(se2)){round(se2,0)}else{se2})) #show quantile instead
+   l<-legend(2700000,1400000,adj=c(0,0.5),title.adj=0,legend=rep("",length(deleg)),y.intersp=1.2,bty="n",title="Density (birds/km2)\nDensité (oiseaux/km2)",cex=tex*1)
 	  
 	  ### add hexagonal density markers
 	  for(j in seq_along(l$text$x)){
 	    X<-l$text$x[j]
 	    Y<-l$text$y[j]
-	    shift<-c(X-coordinates(hex)[1,1],Y-coordinates(hex)[1,2])-c(100000,-7000)
+	    shift<-c(X-coordinates(hex)[1,1],Y-coordinates(hex)[1,2])-c(300000,-7000)
 	    col<-c(NA,lcols)[j]
 	    bord<-c("lightblue",rep(NA,length(lcols)))[j]
-	    plot(elide(hex,shift=shift,rotate=10),col=col,add=TRUE,border=bord,lwd=0.5)
+	    e<-elide(hex,shift=shift,rotate=10)
+	    plot(e,col=col,add=TRUE,border=bord,lwd=0.5)
+	    text(coordinates(e)[,1]+100000,coordinates(e)[,2],label=deleg[j],cex=tex*1,adj=c(0,0.5))
+	    text(coordinates(e)[,1]-100000,coordinates(e)[,2],label=deleg2[j],cex=tex*1,adj=c(1,0.5))
 	  }
 	  
 	  
@@ -560,19 +574,54 @@ for(i in seq_along(lgroup)){
   #legend(2240000,-200000,pch=1,col="lightblue",pt.cex=1.2*mag*(se/max(grid$cv,na.rm=TRUE)),y.intersp=0.75,legend=paste0(c(rep("",length(se)-1),">"),round(se,0)),bty="n",title="CV (%)",cex=tex*1.3)
   cvleg<-strsplit(gsub("\\)|\\(|\\]|\\[","",gsub(","," - ",levels(cutcv)))," - ")
   cvleg<-c("N/A (n = 1)",sapply(cvleg,function(k){paste(gsub(" ","",format(as.numeric(k),nsmall=1,digits=0)),collapse=" - ")}))
-  l<-legend(2500000,410000,,adj=c(0,1),title.adj=0,y.intersp=1.2,legend=cvleg,bty="n",title="Coefficient of variation\nCoefficient de variation (%)",cex=tex*1)
+  l<-legend(2500000,410000,adj=c(1,0.5),title.adj=0,y.intersp=1.2,legend=rep("",length(cvleg)),bty="n",title="Coefficient of variation\nCoefficient de variation (%)",cex=tex*1)
 
   for(j in seq_along(l$text$x)){
-  	X<-l$text$x[j]
+  	#X<-l$text$x[j]
   	Y<-l$text$y[j]
-  	shift<-c(X-coordinates(hex)[1,1],Y-coordinates(hex)[1,2])-c(100000,-7000)
+  	shift<-c(X-coordinates(hex)[1,1],Y-coordinates(hex)[1,2])-c(300000,-7000)
   	bord<-c("lightblue",rep(NA,length(lcols)))[j]
   	width<-c(0.001,cexcv)[j]*40000 # on ajoute une explication et un "fake" buffer de 0.001 pour illustrer l'absence de trous et sa signification
   	hhex<-gBuffer(SpatialPoints(coordinates(hex),proj4string=CRS(proj4string(grid))),width=width,byid=TRUE) # the buffer width value needs to be adjusted manually with the cex of the legend
   	hexholes<-gIntersection(gDifference(hex,hhex),hex,byid=TRUE)
-  	plot(elide(hexholes,shift=shift,rotate=10),col=alpha("white",trans),add=TRUE,border=NA,lwd=1)
+  	e<-elide(hexholes,shift=shift,rotate=10)
+  	plot(e,col=alpha("white",trans),add=TRUE,border=NA,lwd=1)
+  	text(coordinates(e)[,1]+100000,coordinates(e)[,2],label=cvleg[j],cex=tex*1,adj=c(0,0.5))
   }
   
+  
+  
+  ### determine real holes in the grid
+  grid[k,] %>% 
+  	gUnaryUnion %>% 
+  	slot("polygons") %>% 
+  	extract2(1) %>% 
+  	slot("Polygons") %>% 
+  	sapply(function(i){!slot(i,"hole")})->
+  	keep
+  
+  grid[k,] %>% 
+  	gUnaryUnion %>% 
+  	slot("polygons") %>% 
+  	extract2(1) %>% 
+  	slot("Polygons") %>%
+  	extract(keep) %>% 
+  	Polygons(ID=1) %>% 
+  	list %>% 
+  	SpatialPolygons ->
+  	chgrid
+  
+  pp<-
+  
+  k1<-is.na(over(SpatialPoints(coordinates(grid2)),chgrid))
+  k2<-over(SpatialPoints(coordinates(grid),CRS(proj4string(grid))),grid[k,])
+  k2<-apply(k2,1,function(j){all(is.na(j))})
+  k3<-over(SpatialPoints(coordinates(grid),CRS(proj4string(grid))),grid2)
+  k3<-apply(k2,1,function(j){all(is.na(j))})
+  
+  wh<-which(k1 &)
+  
+
   
   ### SAMPLE SIZE
   #text(coordinates(grid)[k,1],coordinates(grid)[k,2],grid$nbsamp[k],cex=tex*0.3,col=alpha("black",0.25))
@@ -636,7 +685,7 @@ for(i in seq_along(lgroup)){
   	        axis(4,cex.axis=0.3,cex.lab=0.3,tcl=-0.1,lwd=0.1,las=2,col.axis="red");
   	        mtext("birds / km\noiseaux / km",side=4,cex=0.3,line=0.2);
   	        mtext("Daily effort (km) and raw linear bird densities\nEffort journalier (km) et densités linéaires brutes d'oiseaux",side=3,cex=0.4,line=0.2)}
-  								,x=c(1700000, 3450000),y=c(-1150000, -750000))
+  								,x=c(1800000, 3450000),y=c(-1125000, -750000))
   
   ### MODULE DE IC HEXAGONAL
   #cent<-2500000
@@ -660,8 +709,9 @@ for(i in seq_along(lgroup)){
   ### LATITUDES numbers
   text(xxlat,yylat[-1],paste0(selat[-1],"°N"),xpd=TRUE,cex=tex*0.5,adj=c(-0.35,-1))
   
-  rect(-60001100000,-70000000000,6000000000,-1340000,col=alpha("white",0.4),border=NA)
+  rect(-60001100000,-70000000000,6000000000,-1290000,col=alpha("white",0.4),border=NA)
   #rect(-60001100000,2960000,6000000000,3000000000,col=alpha("white",0.4),border=NA)
+  text(par("usr")[1],-1320000,"These predicted densities are derived from a distance sampling model using Distance 6.0 and the GeoAviR R package with the Eastern Canadian Seabirds-at-Sea database. Detection probabilities have been estimated by species guilds. The number of samples corresponds to the number of CruiseID/Date/Cell combination.",cex=tex*0.4,adj=c(-0.01,0.5))
   text(par("usr")[1],-1370000,"These predicted densities are derived from a distance sampling model using Distance 6.0 and the GeoAviR R package with the Eastern Canadian Seabirds-at-Sea database. Detection probabilities have been estimated by species guilds. The number of samples corresponds to the number of CruiseID/Date/Cell combination.",cex=tex*0.4,adj=c(-0.01,0.5))
   
   ### PGRID
