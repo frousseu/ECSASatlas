@@ -122,10 +122,15 @@ d$MonthC<-month_comb[sapply(d$Month,function(i){
 eu<-readOGR(dsn="C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_admin_0_countries",encoding="UTF-8")
 eu<-eu[eu$GEOUNIT%in%c("Greenland","Iceland","United Kingdom","Ireland","France","Spain","Portugal"),]
 eu<-spTransform(eu,CRS(laea))
+gr<-eu[eu$ADMIN=="Greenland",]
 na<-readOGR(dsn="C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_admin_1_states_provinces",encoding="UTF-8")
 na<-na[na$admin%in%c("United States of America","Canada"),]
 na<-gIntersection(na,bbox2pol(na,ex=-1),byid=TRUE)
 na<-spTransform(na,CRS(laea))
+boxcut<-c(-1848241,3712932,-1413652,3035287) ### On coupe avec cette bbox (produite en produisant les pngs) pour éviter les problèmes de transparence liés au dépassement des polygones des cadres
+na<-gIntersection(na,bbox2pol(boxcut,ex=-1,proj4string=laea),byid=TRUE)
+eu<-gIntersection(eu,bbox2pol(boxcut,ex=-1,proj4string=laea),byid=TRUE)
+gr<-gIntersection(gr,bbox2pol(boxcut,ex=-1,proj4string=laea),byid=TRUE)
 gl<-readOGR(dsn="C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_lakes",encoding="UTF-8")
 gl<-gl[gl$name%in%c("Lake Ontario","Lake Huron","Lake Erie","Lake Michigan","Lake Superior"),]
 gl<-spTransform(gl,CRS(laea))
@@ -407,7 +412,7 @@ tex<-0.6
 monthEN<-c("December to March","April to July","August to November")
 monthFR<-c("Décembre à Mars","Avril à Juillet","Août à Novembre")
 #lgroup<-names(ml)
-lgroup<-c("DOVE.08091011")
+lgroup<-c("GBBG.04050607")
 ldens<-vector(mode="list",length(lgroup))
 names(ldens)<-lgroup
 i<-1
@@ -465,6 +470,9 @@ for(i in seq_along(lgroup)){
   par(mar=c(0,0,0,0),mgp=c(0.5,0.1,0))
   k<-!is.na(grid$val)
   plot(grid,bg="#7AAFD1",border="#7AAFD1")
+  
+  boxcut<-par("usr")
+  
   #plot(grid)
   #plot(map.osm2,xlim=bbox(grid)[1,],ylim=bbox(grid)[2,],add=TRUE)
   #plot(grid[k,],col="white",bg=alpha("lightblue",0.5),border="grey75",xlim=bbox(grid)[1,],ylim=bbox(grid)[2,],add=TRUE)
@@ -478,6 +486,9 @@ for(i in seq_along(lgroup)){
   plot(b4000,col=hcl(240,50,l[6]),border=NA,add=TRUE)
   plot(b5000,col=hcl(240,50,l[7]),border=NA,add=TRUE)
   plot(b6000,col=hcl(240,50,l[8]),border=NA,add=TRUE)
+  pb<-hcl(240,50,l[1])
+  db<-hcl(240,50,l[7])
+  
   
   ### draw latitudes
   m<-expand.grid(seq(-160,20,by=0.2),seq(25,85,by=5))
@@ -508,90 +519,7 @@ for(i in seq_along(lgroup)){
   ### PLOT Atalntic region
   #plot(reg_atl,border=alpha("darkgreen",0.25),lwd=2,add=TRUE)
   
-  ### plot shapefiles
-  plot(eu,add=TRUE,lwd=0.1,border=NA,col=alpha("grey75",0.85))
-  plot(na,add=TRUE,lwd=0.1,border=NA,col=alpha("grey75",0.85))
-  plot(gl,col=hcl(240,50,l[1]),border=NA,add=TRUE)
-  
-  plot(eu,add=TRUE,lwd=0.5,border="grey55")
-  plot(na,add=TRUE,lwd=0.5,border="grey55")
-  
-  ### bathymetry lines
-  plot(gUnionCascaded(b200),border=alpha("black",0.2),add=TRUE,lwd=0.5)
-  plot(gUnionCascaded(b1000),border=alpha("black",0.2),add=TRUE,lwd=0.5)
-  plot(b2000,border=alpha("black",0.2),add=TRUE,lwd=0.5)
-  plot(b3000,border=alpha("black",0.2),add=TRUE,lwd=0.5)
-  plot(b4000,border=alpha("black",0.2),add=TRUE,lwd=0.5)
-  plot(b5000,border=alpha("black",0.2),add=TRUE,lwd=0.5)
-  plot(b6000,border=alpha("black",0.2),add=TRUE,lwd=0.5)
-  
-  ### SPECIES INFO BOX
-  rect(1100000,2260000,3800000,3100000,col=alpha("white",0.4),border=NA)
-  rect(1100000,2680000,3800000,3100000,col=alpha("white",0.25),border=NA)
-  
-  plot(eu[eu$ADMIN=="Greenland",],add=TRUE,lwd=0.1,border="grey55",col="grey75")
-  
-  o1<-over(lat,na)
-  o2<-apply(over(lat,eu),1,function(k){all(is.na(k))})
-  plot(lat[!is.na(o1) | !o2],add=TRUE,col="grey30",pch=16,cex=0.01)
-  
-	  ### LEGEND DENSITY
-	  if(is.null(br)){
-	    se<-seq(r[1],r[2],length.out=7)
-	    lcols<-rev(alpha(tail(colo.scale(c(grid$val,se),cols=rev(cols),breaks=br),length(se)),trans))
-	  }else{
-	  	 se<-paste(format(round(br[-length(br)],1),nsmall=1,digits=0),format(round(br[-1],1),nsmall=1,digits=0),sep=" - ")
-	  	 se2<-paste(round(br2[-length(br2)],1),round(br2[-1],1),sep=" - ") #illustrate results with quantiles instead
-	  	 lcols<-alpha(cols,trans)
-	  }
-   deleg<-c("0",paste0(c(">",rep("",length(se)-1)),if(is.numeric(se)){round(se,0)}else{se}))
-   deleg2<-c("0",paste0(c(">",rep("",length(se2)-1)),if(is.numeric(se2)){round(se2,0)}else{se2})) #show quantile instead
-   l<-legend(2700000,1400000,adj=c(0,0.5),title.adj=0,legend=rep("",length(deleg)),y.intersp=1.2,bty="n",title="Density (birds/km2)\nDensité (oiseaux/km2)",cex=tex*1)
-	  
-	  ### add hexagonal density markers
-	  for(j in seq_along(l$text$x)){
-	    X<-l$text$x[j]
-	    Y<-l$text$y[j]
-	    shift<-c(X-coordinates(hex)[1,1],Y-coordinates(hex)[1,2])-c(300000,-7000)
-	    col<-c(NA,lcols)[j]
-	    bord<-c("lightblue",rep(NA,length(lcols)))[j]
-	    e<-elide(hex,shift=shift,rotate=10)
-	    plot(e,col=col,add=TRUE,border=bord,lwd=0.5)
-	    text(coordinates(e)[,1]+100000,coordinates(e)[,2],label=deleg[j],cex=tex*1,adj=c(0,0.5))
-	    text(coordinates(e)[,1]-100000,coordinates(e)[,2],label=deleg2[j],cex=tex*1,adj=c(1,0.5))
-	  }
-	  
-	  
-	  
-	  ### CV 
-	  ### LEGEND CV
-	  #####points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=mag*(grid$cv/max(grid$cv,na.rm=TRUE)),col="white")
-  #points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=grid$cex,col="#7AAFD1")
-  ##points(coordinates(grid)[,1],coordinates(grid)[,2],pch=1,cex=mag*(grid$cv/max(grid$cv,na.rm=TRUE)),col=alpha("green",0.8))
-  #####points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=mag*(grid$cv/max(grid$cv,na.rm=TRUE)),col=alpha("black",0.5))
-  se<-seq(min(grid$cv,na.rm=TRUE),max(grid$cv,na.rm=TRUE),length.out=4)
-  #####se<-c(25,50,100,200,300)
-  #legend(2240000,-200000,pch=1,col="lightblue",pt.cex=1.2*mag*(se/max(grid$cv,na.rm=TRUE)),y.intersp=0.75,legend=paste0(c(rep("",length(se)-1),">"),round(se,0)),bty="n",title="CV (%)",cex=tex*1.3)
-  cvleg<-strsplit(gsub("\\)|\\(|\\]|\\[","",gsub(","," - ",levels(cutcv)))," - ")
-  cvleg<-c("N/A (n = 1)",sapply(cvleg,function(k){paste(gsub(" ","",format(as.numeric(k),nsmall=1,digits=0)),collapse=" - ")}))
-  l<-legend(2500000,410000,adj=c(1,0.5),title.adj=0,y.intersp=1.2,legend=rep("",length(cvleg)),bty="n",title="Coefficient of variation\nCoefficient de variation (%)",cex=tex*1)
-
-  for(j in seq_along(l$text$x)){
-  	#X<-l$text$x[j]
-  	Y<-l$text$y[j]
-  	shift<-c(X-coordinates(hex)[1,1],Y-coordinates(hex)[1,2])-c(300000,-7000)
-  	bord<-c("lightblue",rep(NA,length(lcols)))[j]
-  	width<-c(0.001,cexcv)[j]*40000 # on ajoute une explication et un "fake" buffer de 0.001 pour illustrer l'absence de trous et sa signification
-  	hhex<-gBuffer(SpatialPoints(coordinates(hex),proj4string=CRS(proj4string(grid))),width=width,byid=TRUE) # the buffer width value needs to be adjusted manually with the cex of the legend
-  	hexholes<-gIntersection(gDifference(hex,hhex),hex,byid=TRUE)
-  	e<-elide(hexholes,shift=shift,rotate=10)
-  	plot(e,col=alpha("white",trans),add=TRUE,border=NA,lwd=1)
-  	text(coordinates(e)[,1]+100000,coordinates(e)[,2],label=cvleg[j],cex=tex*1,adj=c(0,0.5))
-  }
-  
-  
-  
-  ### determine real holes in the grid
+  ### PLOT unvisited holes in grid
   grid[k,] %>% 
   	gUnaryUnion %>% 
   	slot("polygons") %>% 
@@ -611,16 +539,102 @@ for(i in seq_along(lgroup)){
   	SpatialPolygons ->
   	chgrid
   
-  pp<-
-  
-  k1<-is.na(over(SpatialPoints(coordinates(grid2)),chgrid))
-  k2<-over(SpatialPoints(coordinates(grid),CRS(proj4string(grid))),grid[k,])
+  proj4string(chgrid)<-proj4string(grid)
+  pp<-SpatialPoints(coordinates(grid2),CRS(proj4string(grid2)))
+  k1<-!is.na(over(pp,chgrid))
+  k2<-over(pp,grid[k,])
   k2<-apply(k2,1,function(j){all(is.na(j))})
-  k3<-over(SpatialPoints(coordinates(grid),CRS(proj4string(grid))),grid2)
-  k3<-apply(k2,1,function(j){all(is.na(j))})
+  wh<-which(k1 & k2)
+  plot(pp[wh],add=TRUE,col="lightblue",cex=0.35,pch=4)
   
-  wh<-which(k1 &)
+
+  ### plot shapefiles
+  plot(eu,add=TRUE,lwd=0.1,border=NA,col=alpha("grey75",0.65))
+  plot(na,add=TRUE,lwd=0.1,border=NA,col=alpha("grey75",0.65))
+  plot(gl,col=pb,lwd=0.5,border="grey55",add=TRUE)
   
+  plot(eu,add=TRUE,lwd=0.5,border="grey55")
+  plot(na,add=TRUE,lwd=0.5,border="grey55")
+  
+  ### bathymetry lines
+  plot(gUnionCascaded(b200),border=alpha("black",0.2),add=TRUE,lwd=0.5)
+  plot(gUnionCascaded(b1000),border=alpha("black",0.2),add=TRUE,lwd=0.5)
+  plot(b2000,border=alpha("black",0.2),add=TRUE,lwd=0.5)
+  plot(b3000,border=alpha("black",0.2),add=TRUE,lwd=0.5)
+  plot(b4000,border=alpha("black",0.2),add=TRUE,lwd=0.5)
+  plot(b5000,border=alpha("black",0.2),add=TRUE,lwd=0.5)
+  plot(b6000,border=alpha("black",0.2),add=TRUE,lwd=0.5)
+  
+  ### SPECIES INFO BOX
+  rect(1100000,1560000,3800000,3100000,col=alpha("white",0.4),border=NA) #2260000
+  rect(1100000,2680000,3800000,3100000,col=alpha("white",0.25),border=NA)
+  
+  hide<-gIntersection(gr,bbox2pol(c(1100000,3800000,1560000,3100000),proj4string=laea)) # plot over the topright box to hide it but not hide cells in the west of greenland
+  plot(hide,add=TRUE,border=NA,col="grey75")
+  plot(gr,add=TRUE,lwd=0.5,border="grey55")
+  
+  o1<-over(lat,na)
+  o2<-over(lat,eu)
+  plot(lat[!is.na(o1) | !is.na(o2)],add=TRUE,col="grey30",pch=16,cex=0.01)
+  
+	  ### LEGEND DENSITY
+	  if(is.null(br)){
+	    se<-seq(r[1],r[2],length.out=7)
+	    lcols<-rev(alpha(tail(colo.scale(c(grid$val,se),cols=rev(cols),breaks=br),length(se)),trans))
+	  }else{
+	  	 se<-paste(format(round(br[-length(br)],1),nsmall=1,digits=0),format(round(br[-1],1),nsmall=1,digits=0),sep=" - ")
+	  	 se2<-paste(round(br2[-length(br2)],1),round(br2[-1],1),sep=" - ") #illustrate results with quantiles instead
+	  	 lcols<-alpha(cols,trans)
+	  }
+   deleg<-c("0",paste0(c(">",rep("",length(se)-1)),if(is.numeric(se)){round(se,0)}else{se}))
+   deleg<-paste(deleg,c("/ not visited (  )",rep("",length(deleg)-1)))
+   deleg2<-c("0",paste0(c(">",rep("",length(se2)-1)),if(is.numeric(se2)){round(se2,0)}else{se2})) #show quantile instead
+   l<-legend(2500000,1100000,adj=c(0,0.5),title.adj=0,legend=rep("",length(deleg)),y.intersp=1.2,bty="n",title="Density (birds/km2)\nDensité (oiseaux/km2)",cex=tex*1)
+	  
+	  ### add hexagonal density markers
+	  for(j in seq_along(l$text$x)){
+	    X<-l$text$x[j]
+	    Y<-l$text$y[j]
+	    shift<-c(X-coordinates(hex)[1,1],Y-coordinates(hex)[1,2])-c(400000,-7000)
+	    col<-c(NA,lcols)[j]
+	    bord<-c("lightblue",rep(NA,length(lcols)))[j]
+	    e<-elide(hex,shift=shift,rotate=10)
+	    plot(e,col=col,add=TRUE,border=bord,lwd=0.5)
+	    text(coordinates(e)[,1]+100000,coordinates(e)[,2],label=deleg[j],cex=tex*1,adj=c(0,0.5))
+	    text(coordinates(e)[,1]-100000,coordinates(e)[,2],label=deleg2[j],cex=tex*1,adj=c(1,0.5),col="lightblue")
+	    if(j==1){
+	    	 width<-strwidth(deleg[j],cex=tex*1)
+	      points(coordinates(e)[,1]+100000+width-56000,coordinates(e)[,2]-7000,pch=4,cex=0.35,col="lightblue") 
+	    }
+	  }
+	  
+	  
+	  
+	  ### CV 
+	  ### LEGEND CV
+	  #####points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=mag*(grid$cv/max(grid$cv,na.rm=TRUE)),col="white")
+  #points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=grid$cex,col="#7AAFD1")
+  ##points(coordinates(grid)[,1],coordinates(grid)[,2],pch=1,cex=mag*(grid$cv/max(grid$cv,na.rm=TRUE)),col=alpha("green",0.8))
+  #####points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=mag*(grid$cv/max(grid$cv,na.rm=TRUE)),col=alpha("black",0.5))
+  se<-seq(min(grid$cv,na.rm=TRUE),max(grid$cv,na.rm=TRUE),length.out=4)
+  #####se<-c(25,50,100,200,300)
+  #legend(2240000,-200000,pch=1,col="lightblue",pt.cex=1.2*mag*(se/max(grid$cv,na.rm=TRUE)),y.intersp=0.75,legend=paste0(c(rep("",length(se)-1),">"),round(se,0)),bty="n",title="CV (%)",cex=tex*1.3)
+  cvleg<-strsplit(gsub("\\)|\\(|\\]|\\[","",gsub(","," - ",levels(cutcv)))," - ")
+  cvleg<-c("N/A (n = 1)",sapply(cvleg,function(k){paste(gsub(" ","",format(as.numeric(k),nsmall=1,digits=0)),collapse=" - ")}))
+  l<-legend(2500000,-110000,adj=c(1,0.5),title.adj=0,y.intersp=1.2,legend=rep("",length(cvleg)),bty="n",title="Coefficient of variation\nCoefficient de variation (%)",cex=tex*1)
+
+  for(j in seq_along(l$text$x)){
+  	#X<-l$text$x[j]
+  	Y<-l$text$y[j]
+  	shift<-c(X-coordinates(hex)[1,1],Y-coordinates(hex)[1,2])-c(400000,-7000)
+  	bord<-c("lightblue",rep(NA,length(lcols)))[j]
+  	width<-c(0.001,cexcv)[j]*40000 # on ajoute une explication et un "fake" buffer de 0.001 pour illustrer l'absence de trous et sa signification
+  	hhex<-gBuffer(SpatialPoints(coordinates(hex),proj4string=CRS(proj4string(grid))),width=width,byid=TRUE) # the buffer width value needs to be adjusted manually with the cex of the legend
+  	hexholes<-gIntersection(gDifference(hex,hhex),hex,byid=TRUE)
+  	e<-elide(hexholes,shift=shift,rotate=10)
+  	plot(e,col=alpha("white",trans),add=TRUE,border=NA,lwd=1)
+  	text(coordinates(e)[,1]+100000,coordinates(e)[,2],label=cvleg[j],cex=tex*1,adj=c(0,0.5))
+  }
 
   
   ### SAMPLE SIZE
@@ -646,9 +660,9 @@ for(i in seq_along(lgroup)){
   
   text(3600000,2930000,sp,font=2,adj=c(1,0.5),cex=tex*1.4)
   text(3600000,2780000,spfr,font=2,adj=c(1,0.5),cex=tex*1.4)
-  text(3600000,2600000,paste0(monthEN[mmonth]," / ",monthFR[mmonth]),adj=c(1,0.5),cex=tex)
-  text(3600000,2480000,paste("No. obs. / Nb obs. :  ",nbobs$nb_obs[m]),adj=c(1,0.5),cex=tex)
-  text(3600000,2360000,paste("No. samples / Taille d'échantillon :  ",nbobs$nb_sample[m]),adj=c(1,0.5),cex=tex)
+  text(3600000,2570000,paste0(monthEN[mmonth]," / ",monthFR[mmonth]),adj=c(1,0.5),cex=tex)
+  text(3600000,2450000,paste("No. obs. / Nb obs. :  ",nbobs$nb_obs[m]),adj=c(1,0.5),cex=tex)
+  text(3600000,2330000,paste("No. samples / Taille d'échantillon :  ",nbobs$nb_sample[m]),adj=c(1,0.5),cex=tex)
  
 
   ### barplot
@@ -678,14 +692,15 @@ for(i in seq_along(lgroup)){
   
   
   names(tab)[setdiff(seq_along(tab),seq(1,length(tab),by=10))]<-""
-  subplot({barplot(tab,las=2,cex.names=0.3,cex.lab=0.3,cex.axis=0.3,yaxt="n",border=NA,ylab="Effort (km)",col="lightblue");
-  	        axis(2,cex.axis=0.3,cex.lab=0.3,tcl=-0.1,lwd=0.1,las=2,col.axis="lightblue");
+  subplot({barplot(tab,las=2,cex.names=0.3,cex.lab=0.3,cex.axis=0.3,yaxt="n",border=NA,ylab="",col=db);
+  	        axis(2,cex.axis=0.3,cex.lab=0.3,tcl=-0.1,lwd=0.1,las=2,col.axis=db);
   	        par(new=TRUE);
   								 barplot(temp$V1/temp$eff,las=2,cex.names=0.3,cex.lab=0.3,yaxt="n",cex.axis=0.3,border=NA,col="red");
   	        axis(4,cex.axis=0.3,cex.lab=0.3,tcl=-0.1,lwd=0.1,las=2,col.axis="red");
-  	        mtext("birds / km\noiseaux / km",side=4,cex=0.3,line=0.2);
-  	        mtext("Daily effort (km) and raw linear bird densities\nEffort journalier (km) et densités linéaires brutes d'oiseaux",side=3,cex=0.4,line=0.2)}
-  								,x=c(1800000, 3450000),y=c(-1125000, -750000))
+  	        mtext("Effort (Km)",side=2,cex=0.3,line=0.6);
+  	        mtext("Birds / km\nOiseaux / Km",side=4,cex=0.3,line=0.5);
+  	        mtext("Daily effort (km) and raw linear bird densities\nEffort journalier (km) et densités linéaires brutes d'oiseaux",side=1,cex=0.35,line=0.7)}
+  								,x=c(1600000, 3350000),y=c(1860000, 2160000)) #c(-1125000, -750000)
   
   ### MODULE DE IC HEXAGONAL
   #cent<-2500000
@@ -711,8 +726,8 @@ for(i in seq_along(lgroup)){
   
   rect(-60001100000,-70000000000,6000000000,-1290000,col=alpha("white",0.4),border=NA)
   #rect(-60001100000,2960000,6000000000,3000000000,col=alpha("white",0.4),border=NA)
-  text(par("usr")[1],-1320000,"These predicted densities are derived from a distance sampling model using Distance 6.0 and the GeoAviR R package with the Eastern Canadian Seabirds-at-Sea database. Detection probabilities have been estimated by species guilds. The number of samples corresponds to the number of CruiseID/Date/Cell combination.",cex=tex*0.4,adj=c(-0.01,0.5))
-  text(par("usr")[1],-1370000,"These predicted densities are derived from a distance sampling model using Distance 6.0 and the GeoAviR R package with the Eastern Canadian Seabirds-at-Sea database. Detection probabilities have been estimated by species guilds. The number of samples corresponds to the number of CruiseID/Date/Cell combination.",cex=tex*0.4,adj=c(-0.01,0.5))
+  text(par("usr")[1],-1320000,"Predicted densities are derived from a distance sampling model using Distance 6.0 and the GeoAviR R package with the Eastern Canadian Seabirds-at-Sea database. Detection probabilities have been estimated by species guilds. The number of samples corresponds to the number of CruiseID/Date/Cell combinations.",cex=tex*0.4,adj=c(-0.01,0.5))
+  text(par("usr")[1],-1370000,"Ces densités proviennent de modèles d'échantillonnage par distance basé sur le logiciel Distance 6.0 et le package GeoAviR et utilisant les données des Oiseaux en mer de l'est du Canada. Les probabilités de détection ont été estimés pour des groupes d'espèces similaires. La taille d'échantillon correspond au nombre de combinaisons Croisières/Dates/Cellules.",cex=tex*0.4,adj=c(-0.01,0.5))
   
   ### PGRID
   #pgrid(25,cex=0.15)
