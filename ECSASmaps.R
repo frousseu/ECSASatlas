@@ -569,6 +569,7 @@ for(i in seq_along(lgroup)){
   ### SPECIES INFO BOX
   rect(1100000,1560000,3800000,3100000,col=alpha("white",0.4),border=NA) #2260000
   rect(1100000,2680000,3800000,3100000,col=alpha("white",0.25),border=NA)
+  rect(1100000,2250000,3800000,2350000,col=alpha("white",0.25),border=NA)
   
   hide<-gIntersection(gr,bbox2pol(c(1100000,3800000,1560000,3100000),proj4string=laea)) # plot over the topright box to hide it but not hide cells in the west of greenland
   plot(hide,add=TRUE,border=NA,col="grey75")
@@ -667,8 +668,8 @@ for(i in seq_along(lgroup)){
  
   wmonth<-c("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")
   nmonth<-1:12
-  se<-seq(1600000,3350000,length.out=12)
-  text(se,2330000,wmonth,col=ifelse(seq_along(wmonth)%in%monthNB[[mmonth]],"red","black"),cex=0.35)
+  se<-seq(1600000,3450000,length.out=12)
+  text(se,2300000,wmonth,col=ifelse(seq_along(wmonth)%in%monthNB[[mmonth]],"red","black"),cex=0.35)
 
   
   ### barplot
@@ -739,7 +740,7 @@ for(i in seq_along(lgroup)){
   ### PGRID
   #pgrid(25,cex=0.15)
   
-  box(col="grey50")
+  #box(col=alpha("white",0.4),lwd=1)
 
   dev.off()
   
