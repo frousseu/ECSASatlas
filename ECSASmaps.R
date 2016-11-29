@@ -411,6 +411,7 @@ mag<-1
 tex<-0.6
 monthEN<-c("December to March","April to July","August to November")
 monthFR<-c("Décembre à Mars","Avril à Juillet","Août à Novembre")
+monthNB<-list(c(12,1:3),4:7,8:11)
 #lgroup<-names(ml)
 lgroup<-c("GBBG.04050607")
 ldens<-vector(mode="list",length(lgroup))
@@ -660,11 +661,16 @@ for(i in seq_along(lgroup)){
   
   text(3600000,2930000,sp,font=2,adj=c(1,0.5),cex=tex*1.4)
   text(3600000,2780000,spfr,font=2,adj=c(1,0.5),cex=tex*1.4)
-  text(3600000,2570000,paste0(monthEN[mmonth]," / ",monthFR[mmonth]),adj=c(1,0.5),cex=tex)
-  text(3600000,2450000,paste("No. obs. / Nb obs. :  ",nbobs$nb_obs[m]),adj=c(1,0.5),cex=tex)
-  text(3600000,2330000,paste("No. samples / Taille d'échantillon :  ",nbobs$nb_sample[m]),adj=c(1,0.5),cex=tex)
+  #text(3600000,,paste0(monthEN[mmonth]," / ",monthFR[mmonth]),adj=c(1,0.5),cex=tex)
+  text(3600000,2570000,paste("No. obs. / Nb obs. :  ",nbobs$nb_obs[m]),adj=c(1,0.5),cex=tex)
+  text(3600000,2450000,paste("No. samples / Taille d'échantillon :  ",nbobs$nb_sample[m]),adj=c(1,0.5),cex=tex)
  
+  wmonth<-c("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")
+  nmonth<-1:12
+  se<-seq(1600000,3350000,length.out=12)
+  text(se,2330000,wmonth,col=ifelse(seq_along(wmonth)%in%monthNB[[mmonth]],"red","black"),cex=0.35)
 
+  
   ### barplot
   s<-unique(dl[[group]][,c("Date","SMP_LABEL","SMP_EFFORT")])
   s$Date2<-substr(s$Date,6,10)
@@ -702,6 +708,7 @@ for(i in seq_along(lgroup)){
   	        mtext("Daily effort (km) and raw linear bird densities\nEffort journalier (km) et densités linéaires brutes d'oiseaux",side=1,cex=0.35,line=0.7)}
   								,x=c(1600000, 3350000),y=c(1860000, 2160000)) #c(-1125000, -750000)
   
+
   ### MODULE DE IC HEXAGONAL
   #cent<-2500000
   #h1<-hexpolygon(cent,-800000,dx=200000,dy=120000)
