@@ -412,8 +412,8 @@ tex<-0.6
 monthEN<-c("December to March","April to July","August to November")
 monthFR<-c("Décembre à Mars","Avril à Juillet","Août à Novembre")
 monthNB<-list(c(12,1:3),4:7,8:11)
-#lgroup<-names(ml)
-lgroup<-c("GBBG.04050607")
+lgroup<-names(ml)
+#lgroup<-c("GBBG.12010203")
 ldens<-vector(mode="list",length(lgroup))
 names(ldens)<-lgroup
 i<-1
@@ -421,8 +421,12 @@ i<-1
 for(i in seq_along(lgroup)){
   
   group<-lgroup[i]
+  
+  if(class(ml[[group]])=="character"){
+  	next
+  }
 
-  png(paste0("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps/",gsub("\\.","_",group),"3.png"),width=6,height=4.8,units="in",res=500)
+  png(paste0("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps/",gsub("\\.","_",group),".png"),width=6,height=4.8,units="in",res=500)
 
   dens<-density.map(ml[[group]],by.stratum=TRUE)
   temp<-ddply(dl[[group]],.(cell),function(k){length(unique(k$SMP_LABEL))})

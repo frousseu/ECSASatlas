@@ -273,7 +273,7 @@ box()
 	
 	
 	x<-list.files("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps")
-	x<-x[-grep("season",x)]
+	#x<-x[-grep("season",x)]
 	x2<-gsub("\\.|_","",x)
 	
 	#m<-order(match(substr(x,1,4),sg$Species_ID))
