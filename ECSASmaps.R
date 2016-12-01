@@ -405,15 +405,15 @@ hex<-grid[1,]
 row.names(hex@data)<-sapply(slot(hex, "polygons"), function(x) slot(x, "ID"))
 
 cols<-rev(c("darkred","tomato3","orange","yellow","white"))
-cols<-rev(colo.scale(seq(0,1,length.out=4),c("red","white")))
+cols<-rev(c("darkred",colo.scale(seq(0,1,length.out=3),c("red","white"))))
 trans<-0.65
 mag<-1
 tex<-0.6
 monthEN<-c("December to March","April to July","August to November")
 monthFR<-c("Décembre à Mars","Avril à Juillet","Août à Novembre")
 monthNB<-list(c(12,1:3),4:7,8:11)
-lgroup<-names(ml)
-#lgroup<-c("GBBG.12010203")
+#lgroup<-names(ml)
+lgroup<-c("DOVE.12010203")
 ldens<-vector(mode="list",length(lgroup))
 names(ldens)<-lgroup
 i<-1
@@ -595,7 +595,7 @@ for(i in seq_along(lgroup)){
    deleg<-c("0",paste0(c(">",rep("",length(se)-1)),if(is.numeric(se)){round(se,0)}else{se}))
    deleg<-paste(deleg,c("/ not visited (  )",rep("",length(deleg)-1)))
    deleg2<-c("0",paste0(c(">",rep("",length(se2)-1)),if(is.numeric(se2)){round(se2,0)}else{se2})) #show quantile instead
-   l<-legend(2500000,1100000,adj=c(0,0.5),title.adj=0,legend=rep("",length(deleg)),y.intersp=1.2,bty="n",title="Density (birds/km2)\nDensité (oiseaux/km2)",cex=tex*1)
+   l<-legend(2500000,1100000,adj=c(0,0.5),title.adj=0,legend=rep("",length(deleg)),y.intersp=1.2,bty="n",title="Density(Birds / Km\U00B2)\nDensité (Oiseaux / Km\U00B2)",cex=tex*1)
 	  
 	  ### add hexagonal density markers
 	  for(j in seq_along(l$text$x)){
@@ -627,7 +627,7 @@ for(i in seq_along(lgroup)){
   #legend(2240000,-200000,pch=1,col="lightblue",pt.cex=1.2*mag*(se/max(grid$cv,na.rm=TRUE)),y.intersp=0.75,legend=paste0(c(rep("",length(se)-1),">"),round(se,0)),bty="n",title="CV (%)",cex=tex*1.3)
   cvleg<-strsplit(gsub("\\)|\\(|\\]|\\[","",gsub(","," - ",levels(cutcv)))," - ")
   cvleg<-c("N/A (n = 1)",sapply(cvleg,function(k){paste(gsub(" ","",format(as.numeric(k),nsmall=1,digits=0)),collapse=" - ")}))
-  l<-legend(2500000,-110000,adj=c(1,0.5),title.adj=0,y.intersp=1.2,legend=rep("",length(cvleg)),bty="n",title="Coefficient of variation\nCoefficient de variation (%)",cex=tex*1)
+  l<-legend(2500000,-110000,adj=c(1,0.5),title.adj=0,y.intersp=1.2,legend=rep("",length(cvleg)),bty="n",title="Coefficient of variation (%)\nCoefficient de variation (%)",cex=tex*1)
 
   for(j in seq_along(l$text$x)){
   	#X<-l$text$x[j]
@@ -673,7 +673,7 @@ for(i in seq_along(lgroup)){
   wmonth<-c("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")
   nmonth<-1:12
   se<-seq(1600000,3450000,length.out=12)
-  text(se,2300000,wmonth,col=ifelse(seq_along(wmonth)%in%monthNB[[mmonth]],"red","black"),cex=0.35)
+  text(se,2300000,wmonth,col=ifelse(seq_along(wmonth)%in%monthNB[[mmonth]],"black","grey55"),cex=0.35)
 
   
   ### barplot
@@ -706,8 +706,8 @@ for(i in seq_along(lgroup)){
   subplot({barplot(tab,las=2,cex.names=0.3,cex.lab=0.3,cex.axis=0.3,yaxt="n",border=NA,ylab="",col=db);
   	        axis(2,cex.axis=0.3,cex.lab=0.3,tcl=-0.1,lwd=0.1,las=2,col.axis=db);
   	        par(new=TRUE);
-  								 barplot(temp$V1/temp$eff,las=2,cex.names=0.3,cex.lab=0.3,yaxt="n",cex.axis=0.3,border=NA,col="red");
-  	        axis(4,cex.axis=0.3,cex.lab=0.3,tcl=-0.1,lwd=0.1,las=2,col.axis="red");
+  								 barplot(temp$V1/temp$eff,las=2,cex.names=0.3,cex.lab=0.3,yaxt="n",cex.axis=0.3,border=NA,col=cols[length(cols)]);
+  	        axis(4,cex.axis=0.3,cex.lab=0.3,tcl=-0.1,lwd=0.1,las=2,col.axis=cols[length(cols)]);
   	        mtext("Effort (Km)",side=2,cex=0.3,line=0.6);
   	        mtext("Birds / km\nOiseaux / Km",side=4,cex=0.3,line=0.5);
   	        mtext("Daily effort (km) and raw linear bird densities\nEffort journalier (km) et densités linéaires brutes d'oiseaux",side=1,cex=0.35,line=0.7)}
