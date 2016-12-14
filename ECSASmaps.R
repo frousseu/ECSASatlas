@@ -21,7 +21,7 @@ library(leaflet)
 library(xlsx)
 library(classInt)
 library(FRutils)
-#load("M:/SCF2016_FR/yo9.RData")
+#load("C:/Users/User/Documents/SCF2016_FR/yo9.RData")
 
 
 ###########################################
@@ -29,23 +29,34 @@ library(FRutils)
 ###########################################
 
 
-pathECSAS<-"M:/SCF2016_FR/ECSASdata"
-fileECSAS<-"Master ECSAS v 3.51.mdb"
-groupings<-as.data.frame(read_excel("M:/SCF2016_FR/ECSASatlas/groupingsSOMEC.xlsx",sheet="groups"))
+pathECSAS<-"C:/Users/User/Documents/SCF2016_FR/ECSASdata"
+fileECSAS<-"Master ECSAS v 3.46.mdb"
+groupings<-as.data.frame(read_excel("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/groupingsSOMEC.xlsx",sheet="groups"))
 
 
-groupings<-as.data.frame(read_excel("M:/SCF2016_FR/ECSASatlas/groupingsSOMEC.xlsx",sheet="groups"))
-periods<-as.data.frame(read_excel("M:/SCF2016_FR/ECSASatlas/groupingsSOMEC.xlsx",sheet="periods"))
+groupings<-as.data.frame(read_excel("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/groupingsSOMEC.xlsx",sheet="groups"))
+periods<-as.data.frame(read_excel("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/groupingsSOMEC.xlsx",sheet="periods"))
 periods$Start<-substr(periods$Start,6,10)
 periods$End<-substr(periods$End,6,10)
 
 
 ### get ECSAS database
-ecsas<-ECSAS.extract(lat=c(39.33489,74.65058), long = c(-90.50775,-38.75887),Obs.keep = NA, database = "Both", intransect = TRUE,ecsas.drive = pathECSAS, ecsas.file = fileECSAS)
+#db<-odbcConnectAccess2007(paste(pathECSAS,fileECSAS,sep="/"))
+#obs<-sqlFetch(db,"tblSighting",as.is=TRUE) #?a plante et ne sait pas pourquoi
+#sp<-sqlFetch(db,"tblSpeciesInfo",as.is=TRUE) #?a plante et ne sait pas pourquoi
+#odbcClose(db)
+#spcode<-table(sp$Alpha[match(obs$SpecInfoID,sp$SpecInfoID)])
+#spcode<-spcode[spcode>5] # temporaire, car il y a une limitation à 255 codes dans access
+#spcode<-names(spcode)
+#spcode<-spcode[!is.na(spcode)]
+#spcode<-spcode[sp$Class[match(spcode,sp$Alpha)]=="Bird"]
+#spcode<-spcode[!spcode%in%c("mowa")]
+ecsas<-ECSAS.extract(lat=c(39.33489,74.65058),long=c(-90.50775,-38.75887),database=c("Both"),intransect=TRUE,ecsas.drive=pathECSAS,ecsas.file=fileECSAS)
+### Both needs to be used with the current version dfifield cause All subsets fewer observations
 
 
 ### path pour MCDS.exe
-pathMCDS<-"M:/SCF2016_FR" #path pour MCDS.exe
+pathMCDS<-"C:/Users/User/Documents/SCF2016_FR" #path pour MCDS.exe
 
 
 ### différentes projections utilisées
@@ -55,12 +66,12 @@ laea<-"+proj=laea +lat_0=50 +lon_0=-65"
 
 
 ### extract QC data that is not in ECSAS yet
-addQC<-SOMEC2ECSAS(input="M:/SCF2016_FR/ECSASdata/SOMEC.accdb",output="M:/SCF2016_FR/ECSASdata/ECSASexport.csv",date="2014-04-01",step="5 min",spNA=FALSE)
+addQC<-SOMEC2ECSAS(input="C:/Users/User/Documents/SCF2016_FR/ECSASdata/SOMEC.accdb",output="C:/Users/User/Documents/SCF2016_FR/ECSASdata/ECSASexport.csv",date="2014-04-01",step="5 min")#,spNA=FALSE)
 names(addQC)<-gsub("Orig","",names(addQC))
 
 
 ### Replace french names and wrong names in Quebec data
-db<-odbcConnectAccess2007("M:/SCF2016_FR/ECSASdata/SOMEC.accdb")
+db<-odbcConnectAccess2007("C:/Users/User/Documents/SCF2016_FR/ECSASdata/SOMEC.accdb")
 qc<-sqlFetch(db,"Code espèces",as.is=TRUE)
 odbcClose(db)
 bn<-c("foba","fubo","fulm","GOAC","goar","guma","LALQ","LIMICOLESP","OCWL","PATC","PLON","RAZO","rien","SCSP")
@@ -102,24 +113,24 @@ d$MonthC<-month_comb[sapply(d$Month,function(i){
 
 
 ### get land shapefiles
-eu<-readOGR(dsn="M:/SCF2016_FR/shapefiles",layer="ne_10m_admin_0_countries",encoding="UTF-8")
+eu<-readOGR(dsn="C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_admin_0_countries",encoding="UTF-8")
 eu<-eu[eu$GEOUNIT%in%c("Greenland","Iceland","United Kingdom","Ireland","France","Spain","Portugal"),]
 eu<-spTransform(eu,CRS(laea))
 gr<-eu[eu$ADMIN=="Greenland",]
-na<-readOGR(dsn="M:/SCF2016_FR/shapefiles",layer="ne_10m_admin_1_states_provinces",encoding="UTF-8")
+na<-readOGR(dsn="C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_admin_1_states_provinces",encoding="UTF-8")
 na<-na[na$admin%in%c("United States of America","Canada"),]
 na<-gIntersection(na,bbox2pol(na,ex=-1),byid=TRUE)
 na<-spTransform(na,CRS(laea))
-boxcut<-c(-1848241,3712932,-1413652,3035287) # On coupe avec cette bbox (produite en produisant les pngs) pour éviter les problèmes de transparence liés au dépassement des polygones des cadres
+boxcut<-c(-1848241,3712932,-1413652,3035287) ####!!!!!! On coupe avec cette bbox (déterminée en produisant les pngs avec l'objet boxcut) pour éviter les problèmes de transparence liés au dépassement des polygones des cadres
 na<-gIntersection(na,bbox2pol(boxcut,ex=-1,proj4string=laea),byid=TRUE)
 eu<-gIntersection(eu,bbox2pol(boxcut,ex=-1,proj4string=laea),byid=TRUE)
 gr<-gIntersection(gr,bbox2pol(boxcut,ex=-1,proj4string=laea),byid=TRUE)
-gl<-readOGR(dsn="M:/SCF2016_FR/shapefiles",layer="ne_10m_lakes",encoding="UTF-8")
+gl<-readOGR(dsn="C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_lakes",encoding="UTF-8")
 gl<-gl[gl$name%in%c("Lake Ontario","Lake Huron","Lake Erie","Lake Michigan","Lake Superior"),]
 gl<-spTransform(gl,CRS(laea))
 
 
-pathshp<-"M:/SCF2016_FR/shapefiles"
+pathshp<-"C:/Users/User/Documents/SCF2016_FR/shapefiles"
 b0<-spTransform(readOGR(dsn=pathshp,layer="b0",encoding="UTF-8"),CRS(laea))
 b200<-spTransform(readOGR(dsn=pathshp,layer="b200",encoding="UTF-8"),CRS(laea))
 b1000<-spTransform(readOGR(dsn=pathshp,layer="b1000",encoding="UTF-8"),CRS(laea))
@@ -130,28 +141,32 @@ b5000<-spTransform(readOGR(dsn=pathshp,layer="b5000",encoding="UTF-8"),CRS(laea)
 b6000<-spTransform(readOGR(dsn=pathshp,layer="b6000",encoding="UTF-8"),CRS(laea))
 
 
+
+
+
+### BUILD GRID
 dproj<-SpatialPointsDataFrame(SpatialPoints(matrix(c(d$LongStart,d$LatStart),ncol=2),CRS(ll)),data=d)
-dproj<-spTransform(dproj,CRS(prj))
-
-
-b<-bbox(dproj)
-s<-100000
-g<-GridTopology(c(b[1,1],b[2,1]),c(s,s),c(ceiling((b[1,2]-b[1,1])/s),ceiling((b[2,2]-b[2,1])/s)))
-g<-SpatialGrid(g)
-grid<-g
-grid<-as(grid,"SpatialPolygons")
-proj4string(grid)<-CRS(prj)
+dproj<-spTransform(dproj,CRS(laea))
+grid<-hexgrid(dproj,width=100000,convex=FALSE,seed=111)
+grid2<-hexgrid(bbox2pol(dproj),width=100000,convex=FALSE,seed=111) # a second "complete" grid to find out where are unvisited cells
+#b<-bbox(dproj)
+#s<-100000
+#g<-GridTopology(c(b[1,1],b[2,1]),c(s,s),c(ceiling((b[1,2]-b[1,1])/s),ceiling((b[2,2]-b[2,1])/s)))
+#g<-SpatialGrid(g)
+#grid<-g
+#grid<-as(grid,"SpatialPolygons")
+#proj4string(grid)<-CRS(prj)
 ## hex grid
 #grid2<-gBuffer(grid,width=s) #ceci plante avec un buffer sur toute la grille et je ne sais pas pourquoi
-set.seed(111)
-grid2<-spsample(grid,type="hexagonal",cellsize=s)
-grid2<-HexPoints2SpatialPolygons(grid2)
-grid<-grid2 ### change to hex grid here
-grid<-SpatialPolygonsDataFrame(grid,data=data.frame(id=1:length(grid)),match.ID=FALSE)
+#set.seed(111)
+#grid2<-spsample(grid,type="hexagonal",cellsize=s)
+#grid2<-HexPoints2SpatialPolygons(grid2)
+#grid<-grid2 ### change to hex grid here
+#grid<-SpatialPolygonsDataFrame(grid,data=data.frame(id=1:length(grid)),match.ID=FALSE)
 grid$id<-paste0("g",grid$id)
-o<-over(grid,dproj)
-grid<-grid[apply(o,1,function(i){!all(is.na(i))}),]
-grid$id<-1:nrow(grid)
+#o<-over(grid,dproj)
+#grid<-grid[apply(o,1,function(i){!all(is.na(i))}),]
+#grid$id<-1:nrow(grid)
 
 
 
@@ -168,6 +183,8 @@ d$Group3<-groupings$Group3[match(d$Alpha,groupings$Alpha)]
 d$Group3<-ifelse(is.na(d$Group3),"",d$Group3)
 d$Group<-d$Group3
 
+
+### CHECK HERE IF IT'S STILL USEFULL
 ### compute number of observations per groups/periods
 d2<-ddply(d[!is.na(d$Group),],.(Group),function(i){
    temp<-periods[which(periods$Group%in%i$Group[1]),]
@@ -253,7 +270,7 @@ mg<-distance.wrap(ds,
     STR_AREA="STR_AREA",
     SMP_LABEL="SMP_LABEL",
     STR_LABEL="STR_LABEL",
-    path="M:/SCF2016_FR/ECSASatlas/distance.wrap.output",
+    path="C:/Users/User/Documents/SCF2016_FR/ECSASatlas/distance.wrap.output",
     pathMCDS=pathMCDS
 )
 
@@ -354,7 +371,7 @@ for(i in seq_along(dl)){
      SMP_LABEL="SMP_LABEL",
      STR_LABEL="cell",
      stratum="STR_LABEL",
-     path="M:/SCF2016_FR/ECSASatlas/distance.wrap.output",
+     path="C:/Users/User/Documents/SCF2016_FR/ECSASatlas/distance.wrap.output",
      pathMCDS=pathMCDS,
      multiplier=2/mult
    )
@@ -378,14 +395,13 @@ for(i in seq_along(dl)){
 #grid2<-spTransform(grid2,CRS(laea))
 
 #grid<-spTransform(grid,CRS(laea))
-#reg_atl<-readOGR("M:/SCF2016_FR/shapefiles",layer="ATLBioregions",verbose=FALSE)
+#reg_atl<-readOGR("C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ATLBioregions",verbose=FALSE)
 #reg_atl<-spTransform(reg_atl,CRS(proj4string(grid)))
 
 
 hex<-grid[1,]
 row.names(hex@data)<-sapply(slot(hex, "polygons"), function(x) slot(x, "ID"))
 
-cols<-rev(c("darkred","tomato3","orange","yellow","white"))
 cols<-rev(c("darkred",colo.scale(seq(0,1,length.out=3),c("red","white"))))
 trans<-0.65
 mag<-1
@@ -394,7 +410,7 @@ monthEN<-c("December to March","April to July","August to November")
 monthFR<-c("Décembre à Mars","Avril à Juillet","Août à Novembre")
 monthNB<-list(c(12,1:3),4:7,8:11)
 #lgroup<-names(ml)
-lgroup<-c("DOVE.12010203")
+lgroup<-c("DOVE.08091011")
 ldens<-vector(mode="list",length(lgroup))
 names(ldens)<-lgroup
 i<-1
@@ -403,11 +419,11 @@ for(i in seq_along(lgroup)){
   
   group<-lgroup[i]
   
-  if(class(ml[[group]])=="character"){
+  if(class(ml[[group]])=="character"){ # this is for models that do not run
   	next
   }
 
-  png(paste0("M:/SCF2016_FR/ECSASatlas/maps/",gsub("\\.","_",group),".png"),width=6,height=4.8,units="in",res=500)
+  png(paste0("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps/",gsub("\\.","_",group),"_.png"),width=6,height=4.8,units="in",res=500)
 
   dens<-density.map(ml[[group]],by.stratum=TRUE)
   temp<-ddply(dl[[group]],.(cell),function(k){length(unique(k$SMP_LABEL))})
@@ -455,7 +471,7 @@ for(i in seq_along(lgroup)){
   ### PLOT
   par(mar=c(0,0,0,0),mgp=c(0.5,0.1,0))
   k<-!is.na(grid$val)
-  plot(grid,bg="#7AAFD1",border="#7AAFD1")
+  plot(grid,bg="#7AAFD1",border="#7AAFD1",xaxs="i",yaxs="i",xlim=c(-1848241,3712932),ylim=c(-1413652,3035287))
   
   boxcut<-par("usr")
   
@@ -585,7 +601,7 @@ for(i in seq_along(lgroup)){
 	    shift<-c(X-coordinates(hex)[1,1],Y-coordinates(hex)[1,2])-c(400000,-7000)
 	    col<-c(NA,lcols)[j]
 	    bord<-c("lightblue",rep(NA,length(lcols)))[j]
-	    e<-elide(hex,shift=shift,rotate=10)
+	    e<-elide(hex,shift=shift,rotate=0) ###!!!!!!!!!!!! la valeur du rotate doit être ajustée à la mitaine en fonction de la cellule choisie hex
 	    plot(e,col=col,add=TRUE,border=bord,lwd=0.5)
 	    text(coordinates(e)[,1]+100000,coordinates(e)[,2],label=deleg[j],cex=tex*1,adj=c(0,0.5))
 	    text(coordinates(e)[,1]-100000,coordinates(e)[,2],label=deleg2[j],cex=tex*1,adj=c(1,0.5),col="lightblue")
@@ -618,7 +634,7 @@ for(i in seq_along(lgroup)){
   	width<-c(0.001,cexcv)[j]*40000 # on ajoute une explication et un "fake" buffer de 0.001 pour illustrer l'absence de trous et sa signification
   	hhex<-gBuffer(SpatialPoints(coordinates(hex),proj4string=CRS(proj4string(grid))),width=width,byid=TRUE) # the buffer width value needs to be adjusted manually with the cex of the legend
   	hexholes<-gIntersection(gDifference(hex,hhex),hex,byid=TRUE)
-  	e<-elide(hexholes,shift=shift,rotate=10)
+  	e<-elide(hexholes,shift=shift,rotate=0)
   	plot(e,col=alpha("white",trans),add=TRUE,border=NA,lwd=1)
   	text(coordinates(e)[,1]+100000,coordinates(e)[,2],label=cvleg[j],cex=tex*1,adj=c(0,0.5))
   }
@@ -762,7 +778,7 @@ s$nbdays<-ifelse(is.na(s$nbdays),0,s$nbdays)
 
 for(i in seq_along(month_comb)[1:2]){
 	
-	png(paste0("M:/SCF2016_FR/ECSASatlas/maps/",paste0("season",month_comb[i]),".png"),width=6,height=4.8,units="in",res=500)
+	png(paste0("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps/",paste0("season",month_comb[i]),".png"),width=6,height=4.8,units="in",res=500)
 	
 	x<-s[s$MonthC==month_comb[i],]
 	
@@ -886,13 +902,13 @@ g<-ddply(s,.(cell,MonthC),function(i){
 ### WRITE FILES FOR OPEN DATA
 ###########################################
 
-write.xlsx(opendata,"M:/SCF2016_FR/ECSASatlas/open_data.xlsx",row.names=FALSE,col.names=TRUE,sheetName="Densities",showNA=FALSE)
+write.xlsx(opendata,"C:/Users/User/Documents/SCF2016_FR/ECSASatlas/open_data.xlsx",row.names=FALSE,col.names=TRUE,sheetName="Densities",showNA=FALSE)
 
-write.xlsx(g,"M:/SCF2016_FR/ECSASatlas/open_data.xlsx",row.names=FALSE,col.names=TRUE,sheetName="Effort",append=TRUE,showNA=FALSE)
+write.xlsx(g,"C:/Users/User/Documents/SCF2016_FR/ECSASatlas/open_data.xlsx",row.names=FALSE,col.names=TRUE,sheetName="Effort",append=TRUE,showNA=FALSE)
 
-writeOGR(grid[,"id"],dsn="M:/SCF2016_FR/ECSASatlas",layer="atlas_grid",driver="ESRI Shapefile")
+writeOGR(grid[,"id"],dsn="C:/Users/User/Documents/SCF2016_FR/ECSASatlas",layer="atlas_grid",driver="ESRI Shapefile")
 
-zip("M:/SCF2016_FR/ECSASatlas/atlas_images",list.files("M:/SCF2016_FR/ECSASatlas/maps",full.names=TRUE,pattern=".png")[1:2])
+zip("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/atlas_images",list.files("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps",full.names=TRUE,pattern=".png")[1:2])
 
 
 
@@ -935,6 +951,6 @@ mobs<-distance.wrap(d[d$CruiseID%in%cruise,],#il n'y a que 4 lignes pour ce Crui
 )
 
 names(mobs)<-gsub("-|_| ","",names(mobs)) # on dirait que les fichiers avec - _ ou des espaces ne passent pas
-global.summary.distanceList(model=mobs,species=NULL,file="obs",directory="M:/")
+global.summary.distanceList(model=mobs,species=NULL,file="obs",directory="C:/Users/User/Documents/")
 
 
