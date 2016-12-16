@@ -21,7 +21,7 @@ library(leaflet)
 library(xlsx)
 library(classInt)
 library(FRutils)
-#load("C:/Users/User/Documents/SCF2016_FR/yo9.RData")
+#load("M:/SCF2016_FR/yo9.RData")
 
 
 ###########################################
@@ -29,21 +29,19 @@ library(FRutils)
 ###########################################
 
 
-pathECSAS<-"C:/Users/User/Documents/SCF2016_FR/ECSASdata"#"Y:/Inventaires/Pélagiques/ECSAS"
+pathECSAS<-"Y:/Inventaires/Pélagiques/ECSAS"
 fileECSAS<-"Master ECSAS v 3.51.mdb"
-groupings<-as.data.frame(read_excel("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/groupingsSOMEC.xlsx",sheet="groups"))
 
-
-groupings<-as.data.frame(read_excel("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/groupingsSOMEC.xlsx",sheet="groups"))
-groups<-read.csv("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/bird_groups.csv",header=TRUE,stringsAsFactors=FALSE) #this file is on my NEECbirds github
+groupings<-as.data.frame(read_excel("M:/SCF2016_FR/ECSASatlas/groupingsSOMEC.xlsx",sheet="groups"))
+groups<-read.csv("M:/SCF2016_FR/ECSASatlas/bird_groups.csv",header=TRUE,stringsAsFactors=FALSE) #this file is on my NEECbirds github
 
 
 ### get ECSAS database
 ecsas<-ECSAS.extract(lat=c(39.33489,74.65058),long=c(-90.50775,-38.75887),sub.program=c("Atlantic","Quebec"),ecsas.drive=pathECSAS,ecsas.file=fileECSAS)
-
+ecsas$English<-as.character(ecsas$English)
 
 ### path pour MCDS.exe
-pathMCDS<-"C:/Users/User/Documents/SCF2016_FR" #path pour MCDS.exe
+pathMCDS<-"M:/SCF2016_FR" #path pour MCDS.exe
 
 
 ### différentes projections utilisées
@@ -52,13 +50,45 @@ prj<-"+proj=utm +zone=22 +datum=NAD83 +ellps=GRS80"
 laea<-"+proj=laea +lat_0=50 +lon_0=-65"
 
 
+### GET LAND SHAPEFILES
+## comes form natural earth
+pathshp<-"M:/SCF2016_FR/shapefiles"
+eu<-readOGR(dsn=pathshp,layer="ne_10m_admin_0_countries",encoding="UTF-8")
+eu<-eu[eu$GEOUNIT%in%c("Greenland","Iceland","United Kingdom","Ireland","France","Spain","Portugal"),]
+eu<-spTransform(eu,CRS(laea))
+gr<-eu[eu$ADMIN=="Greenland",]
+na<-readOGR(dsn=pathshp,layer="ne_10m_admin_1_states_provinces",encoding="UTF-8")
+na<-na[na$admin%in%c("United States of America","Canada"),]
+na<-gIntersection(na,bbox2pol(na,ex=-1),byid=TRUE)
+na<-spTransform(na,CRS(laea))
+boxcut<-c(-1848241,3712932,-1413652,3035287) ####!!!!!! On coupe avec cette bbox (déterminée en produisant les pngs avec l'objet boxcut) pour éviter les problèmes de transparence liés au dépassement des polygones des cadres
+na<-gIntersection(na,bbox2pol(boxcut,ex=-1,proj4string=laea),byid=TRUE)
+eu<-gIntersection(eu,bbox2pol(boxcut,ex=-1,proj4string=laea),byid=TRUE)
+gr<-gIntersection(gr,bbox2pol(boxcut,ex=-1,proj4string=laea),byid=TRUE)
+gl<-readOGR(dsn=pathshp,layer="ne_10m_lakes",encoding="UTF-8")
+gl<-gl[gl$name%in%c("Lake Ontario","Lake Huron","Lake Erie","Lake Michigan","Lake Superior"),]
+gl<-spTransform(gl,CRS(laea))
+b0<-spTransform(readOGR(dsn=pathshp,layer="b0",encoding="UTF-8"),CRS(laea))
+b200<-spTransform(readOGR(dsn=pathshp,layer="b200",encoding="UTF-8"),CRS(laea))
+b1000<-spTransform(readOGR(dsn=pathshp,layer="b1000",encoding="UTF-8"),CRS(laea))
+b2000<-spTransform(readOGR(dsn=pathshp,layer="b2000",encoding="UTF-8"),CRS(laea))
+b3000<-spTransform(readOGR(dsn=pathshp,layer="b3000",encoding="UTF-8"),CRS(laea))
+b4000<-spTransform(readOGR(dsn=pathshp,layer="b4000",encoding="UTF-8"),CRS(laea))
+b5000<-spTransform(readOGR(dsn=pathshp,layer="b5000",encoding="UTF-8"),CRS(laea))
+b6000<-spTransform(readOGR(dsn=pathshp,layer="b6000",encoding="UTF-8"),CRS(laea))
+
+
+
 ### extract QC data that is not in ECSAS yet
-addQC<-SOMEC2ECSAS(input="C:/Users/User/Documents/SCF2016_FR/ECSASdata/SOMEC.accdb",output="C:/Users/User/Documents/SCF2016_FR/ECSASdata/ECSASexport.csv",date="2014-04-01",step="5 min",spNA=FALSE)
+addQC<-SOMEC2ECSAS(input="M:/SCF2016_FR/ECSASdata/SOMEC.accdb",output="M:/SCF2016_FR/ECSASdata/ECSASexport.csv",date="2014-04-01",step="5 min",spNA=FALSE)
 names(addQC)<-gsub("Orig","",names(addQC))
+# For now, elements without WatchID are scrapped, it may be due to a bug in the SOMEC2ECSAS function or missing data in the original files. Check for that and add a comment in the TODO list of ECSASconnect
+addQC<-addQC[!is.na(addQC$WatchID),]
 
 
+### MAKE SURE SOMEC database is ok when I LEAVE!!!!!!!!!!!!
 ### Replace french names and wrong names in Quebec data
-db<-odbcConnectAccess2007("C:/Users/User/Documents/SCF2016_FR/ECSASdata/SOMEC.accdb") ### nedd a last update to SOMEC and make sure it is correct compared to the old version
+db<-odbcConnectAccess2007("M:/SCF2016_FR/ECSASdata/SOMEC.accdb") ### nedd a last update to SOMEC and make sure it is correct compared to the old version
 qc<-sqlFetch(db,"Code espèces",as.is=TRUE)
 odbcClose(db)
 bn<-c("foba","fubo","fulm","GOAC","goar","guma","LALQ","LIMICOLESP","OCWL","PATC","PLON","RAZO","rien","SCSP")
@@ -69,20 +99,21 @@ m<-match(addQC$Alpha,qc$CodeFR)
 addQC$Alpha<-ifelse(!is.na(m),qc$CodeAN[m],addQC$Alpha)
 addQC$add<-1 # pour v?rifier les lignes restantes ? la fin
 addQC$Date<-ifelse(is.na(addQC$Date),substr(addQC$StartTime,1,10),addQC$Date)
-#addQC$Distance<-ifelse(is.na(addQC$Distance),"",addQC$Distance) # temp car la fonction SOMEC2ECSAS retournait des NA
+addQC$English<-ifelse(ecsas$English[match(addQC$Alpha,ecsas$Alpha)])
 
 
 ### build complete database
-d<-ecsas
+#d<-ecsas
 d<-join(ecsas,addQC,type="full")
 #d$Date<-substr(d$Date,1,10)
 d$Alpha<-ifelse(is.na(d$Alpha) | d$Alpha%in%c("RIEN","NOBI"),"",as.character(d$Alpha))
+d$English<-ifelse(is.na(d$English),"",as.character(d$English))
 d$Distance<-ifelse(is.na(d$Distance),"",as.character(d$Distance))
 dl<-c("A","B","C","D","c")
 dn<-c("25","75","150","250","150")
 m<-match(d$Distance,dl)
 d$Distance<-ifelse(is.na(m),d$Distance,dn[m])
-d<-d[which(d$LongStart>(-150) & d$LongStart<(-18)),] ### j'enl?ve la croisi?re partant vers l'uerope car cr?er des distortions dans les projections
+d<-d[which(d$LongStart>(-150) & d$LongStart<(-18)),] ### j'enlève la croisière partant vers l'uerope car créer des distortions dans les projections
 d<-d[which(d$LatStart>(0) & d$LatStart<(90)),]
 #d<-d[which(d$InTransect%in%c(-1)),] les transects vides ont des NA
 d<-distance.filter(d,distance.labels=c(25,75,150,250))
@@ -99,66 +130,15 @@ d$MonthC<-month_comb[sapply(d$Month,function(i){
 })]
 
 
-### get land shapefiles
-## comes form natural earth
-eu<-readOGR(dsn="C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_admin_0_countries",encoding="UTF-8")
-eu<-eu[eu$GEOUNIT%in%c("Greenland","Iceland","United Kingdom","Ireland","France","Spain","Portugal"),]
-eu<-spTransform(eu,CRS(laea))
-gr<-eu[eu$ADMIN=="Greenland",]
-na<-readOGR(dsn="C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_admin_1_states_provinces",encoding="UTF-8")
-na<-na[na$admin%in%c("United States of America","Canada"),]
-na<-gIntersection(na,bbox2pol(na,ex=-1),byid=TRUE)
-na<-spTransform(na,CRS(laea))
-boxcut<-c(-1848241,3712932,-1413652,3035287) ####!!!!!! On coupe avec cette bbox (déterminée en produisant les pngs avec l'objet boxcut) pour éviter les problèmes de transparence liés au dépassement des polygones des cadres
-na<-gIntersection(na,bbox2pol(boxcut,ex=-1,proj4string=laea),byid=TRUE)
-eu<-gIntersection(eu,bbox2pol(boxcut,ex=-1,proj4string=laea),byid=TRUE)
-gr<-gIntersection(gr,bbox2pol(boxcut,ex=-1,proj4string=laea),byid=TRUE)
-gl<-readOGR(dsn="C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ne_10m_lakes",encoding="UTF-8")
-gl<-gl[gl$name%in%c("Lake Ontario","Lake Huron","Lake Erie","Lake Michigan","Lake Superior"),]
-gl<-spTransform(gl,CRS(laea))
-
-
-pathshp<-"C:/Users/User/Documents/SCF2016_FR/shapefiles"
-b0<-spTransform(readOGR(dsn=pathshp,layer="b0",encoding="UTF-8"),CRS(laea))
-b200<-spTransform(readOGR(dsn=pathshp,layer="b200",encoding="UTF-8"),CRS(laea))
-b1000<-spTransform(readOGR(dsn=pathshp,layer="b1000",encoding="UTF-8"),CRS(laea))
-b2000<-spTransform(readOGR(dsn=pathshp,layer="b2000",encoding="UTF-8"),CRS(laea))
-b3000<-spTransform(readOGR(dsn=pathshp,layer="b3000",encoding="UTF-8"),CRS(laea))
-b4000<-spTransform(readOGR(dsn=pathshp,layer="b4000",encoding="UTF-8"),CRS(laea))
-b5000<-spTransform(readOGR(dsn=pathshp,layer="b5000",encoding="UTF-8"),CRS(laea))
-b6000<-spTransform(readOGR(dsn=pathshp,layer="b6000",encoding="UTF-8"),CRS(laea))
-
-
-
-
-
 ### BUILD GRID
 dproj<-SpatialPointsDataFrame(SpatialPoints(matrix(c(d$LongStart,d$LatStart),ncol=2),CRS(ll)),data=d)
 dproj<-spTransform(dproj,CRS(laea))
 grid<-hexgrid(dproj,width=100000,convex=FALSE,seed=111)
 grid2<-hexgrid(bbox2pol(dproj),width=100000,convex=FALSE,seed=111) # a second "complete" grid to find out where are unvisited cells
-#b<-bbox(dproj)
-#s<-100000
-#g<-GridTopology(c(b[1,1],b[2,1]),c(s,s),c(ceiling((b[1,2]-b[1,1])/s),ceiling((b[2,2]-b[2,1])/s)))
-#g<-SpatialGrid(g)
-#grid<-g
-#grid<-as(grid,"SpatialPolygons")
-#proj4string(grid)<-CRS(prj)
-## hex grid
-#grid2<-gBuffer(grid,width=s) #ceci plante avec un buffer sur toute la grille et je ne sais pas pourquoi
-#set.seed(111)
-#grid2<-spsample(grid,type="hexagonal",cellsize=s)
-#grid2<-HexPoints2SpatialPolygons(grid2)
-#grid<-grid2 ### change to hex grid here
-#grid<-SpatialPolygonsDataFrame(grid,data=data.frame(id=1:length(grid)),match.ID=FALSE)
 grid$id<-paste0("g",grid$id)
-#o<-over(grid,dproj)
-#grid<-grid[apply(o,1,function(i){!all(is.na(i))}),]
-#grid$id<-1:nrow(grid)
 
 
 ### GET DATA THAT IS IN CELLS ---------------------------
-
 dshp<-SpatialPointsDataFrame(SpatialPoints(matrix(c(d$LongStart,d$LatStart),ncol=2),CRS(ll)),data=d)
 o<-over(spTransform(dshp,CRS(proj4string(grid))),grid)
 d$STR_LABEL<-o$id
@@ -166,7 +146,11 @@ d$cell<-o$id
 d<-d[!is.na(d$STR_LABEL),]
 
 
-### GROUPINGS -------------------------------------------
+##############################################
+### GROUPINGS
+##############################################
+
+# there is a group for detection and a group for the atlas product
 
 d$English<-as.character(d$English)
 d$English[grep("Genus: Gulls",d$English)]<-"Genus: Gulls"
@@ -176,18 +160,26 @@ m<-match(d$English,groups$sp)
 sort(table(d$English[m]))
 
 # If no species are in English because of an empty transect, we don't want ;a group name
-d$Group_detection<-ifelse(!d$English%in%c("",NA),groups$group_detection[m],"")
-d$Group_atlas<-ifelse(!d$English%in%c("",NA),groups$group_atlas[m],"")
+d$group_detection<-ifelse(!d$English%in%c("",NA),groups$group_detection[m],"")
+d$group_atlas<-ifelse(!d$English%in%c("",NA),groups$group_atlas[m],"")
 
 # Check what does not have a group name to make sure it is not an important species 
-empty<-is.na(d$Group_detection) | d$Group_detection==""
+empty<-is.na(d$group_detection) | d$group_detection==""
 sort(table(d$English[empty]))
-empty<-is.na(d$Group_atlas) | d$Group_detection==""
+empty<-is.na(d$group_atlas) | d$group_detection==""
 sort(table(d$English[empty]))
 
 # Turn what does not have a group to empty values in species, distance, groups and count
 
+k1<-!d$Alpha%in%c("",NA) & d$group_detection%in%c("",NA)
+k2<-!d$Alpha%in%c("",NA) & d$group_atlas%in%c("",NA)
 
+d$Alpha<-ifelse(k1 & k2,"",d$Alpha)
+d$English<-ifelse(k1 & k2,"",d$English)
+d$Count<-ifelse(k1 & k2,"",d$Count)
+d$Distance<-ifelse(k1 & k2,"",d$Distance)
+d$group_detection<-ifelse(k1 & k2,"",d$group_detection)
+d$group_atlas<-ifelse(k1 & k2,"",d$group_atlas)
 
 
 ###########################################
@@ -196,8 +188,8 @@ sort(table(d$English[empty]))
 
 ### run model without empty transect to only get detection probability and the maximum number of observations compared to 32767
 
-group_list<-unique(d$Group_detection) 
-group_list<-group_list[group_list!=""]
+group_detection_list<-unique(d$group_detection) 
+group_detection_list<-group_detection_list[group_detection_list!=""]
 
 ### build new Watch IDs with days/cruise
 d$SMP_LABEL<-paste(d$CruiseID,d$Date,d$cell,sep="_")
@@ -244,25 +236,25 @@ mg<-distance.wrap(ds,
       Area_units="Square kilometers"),
     breaks=c(0,50,100,200,300), 
     estimator=list(c("HN","CO")),
-    lsub=list(Group=group_list), 
+    lsub=list(group_detection=group_detection_list), 
     empty=NULL,
     split=TRUE,
     STR_AREA="STR_AREA",
     SMP_LABEL="SMP_LABEL",
     STR_LABEL="STR_LABEL",
-    path="C:/Users/User/Documents/SCF2016_FR/ECSASatlas/distance.wrap.output",
+    path="M:/SCF2016_FR/ECSASatlas/distance.wrap.output",
     pathMCDS=pathMCDS
 )
 
 
 
 ### number of watches and observations for each group
-nbobs<-ddply(d,.(Group,Alpha,MonthC),function(x){
+nbobs<-ddply(d,.(group_atlas,group_detection,Alpha,MonthC),function(x){
   nb_sample<-length(unique(d$SMP_LABEL[d$MonthC==x$MonthC[1]]))
   nb_obs<-sum(x$Alpha!="")
   c(nb_sample,nb_obs)
 })
-names(nbobs)[1:5]<-c("Group","Alpha","MonthC","nb_sample","nb_obs")
+names(nbobs)[1:6]<-c("group_atlas","group_detection","Alpha","MonthC","nb_sample","nb_obs")
 nbobs<-nbobs[nbobs$Alpha!="",]
 
 ### number of cells for each MonthC
@@ -271,23 +263,27 @@ ddply(d,.(MonthC),function(x){
 })
 
 ### BUILD MULTIPLIER LIST WITH PROBABILITY OF DETECTION FOR SPECIES AND GROUPS
-group_mult_list<-sapply(group_list,function(i){
+temp<-sapply(group_detection_list,function(i){
   x<-mg[[i]]$parameter_estimates$Global
   x$Estimates[x$Parameters=="p"]
 })
 
-mult_list<-group_mult_list
-mult_list<-mult_list[match(d$Group[match(unique(d$Alpha),d$Alpha)],names(mult_list))]
+g<-unique(groups[,c("group_detection","group_atlas")])
+g<-g[!(g[,1]=="" | g[,2]==""),]
+
+temp<-temp[g$group_detection]
+names(temp)<-g$group_atlas
+
+mult_list<-temp
+mult_list<-mult_list[match(d$group_atlas[match(unique(d$Alpha),d$Alpha)],names(mult_list))]
 names(mult_list)<-unique(d$Alpha)
 mult_list<-mult_list[!is.na(mult_list)]
-
-mult_list<-c(mult_list,group_mult_list) ### added values for groups
-
+mult_list<-c(mult_list,temp) ### added values for groups
 
 
 
 ### BUILD DATA FOR EACH SPECIES
-dl1<-dlply(d,.(Alpha,MonthC),function(x){ # data list
+dl1<-dlply(d[d$Alpha!="",],.(Alpha,MonthC),function(x){ # data list
   y<-d[d$MonthC==x$MonthC[1],]
   w1<-which(y$Alpha!=x$Alpha[1])
   y$Empty<-0
@@ -300,8 +296,8 @@ dl1<-dlply(d,.(Alpha,MonthC),function(x){ # data list
 
 ### BUILD DATA FOR EACH GROUP
 d2<-d
-d2$Alpha<-ifelse(d$Alpha=="",d$Alpha,d$Group)
-dl2<-dlply(d2,.(Alpha,MonthC),function(x){ # data list
+d2$Alpha<-ifelse(d$Alpha=="",d$Alpha,d$group_atlas)
+dl2<-dlply(d2[d2$Alpha!="",],.(Alpha,MonthC),function(x){ # data list
 	y<-d2[d2$MonthC==x$MonthC[1],]
 	w1<-which(y$Alpha!=x$Alpha[1])
 	y$Empty<-0
@@ -314,9 +310,8 @@ dl2<-dlply(d2,.(Alpha,MonthC),function(x){ # data list
 
 ### APPEND BOTH LIST AND SUBSET ACCORDING TO A NUMBER OF OBSERVATIONS
 dl<-c(dl1,dl2)
-w<-which(nbobs$nb_obs>=50) #on garde ce qui est en haut de 50
-keep<-c(paste(nbobs$Alpha[w],nbobs$MonthC[w],sep="."),names(dl2))
-dl<-dl[which(names(dl)%in%keep)] #on enl?ve ce qui n'a pas assez d'observations
+keep<-sapply(dl,function(x){sum(x$Alpha!="")})
+dl<-dl[keep>20] #on enlève ce qui n'a pas assez d'observations
 ml<-vector(mode="list",length=length(dl))
 names(ml)<-names(dl)
 
@@ -329,7 +324,7 @@ names(ml)<-names(dl)
 
 #ALSP.08091011 ne run pas pour une raison obscure
 
-for(i in seq_along(dl)){
+for(i in tail(seq_along(dl))){
   
    x<-dl[[i]]
    mult<-mult_list[match(sapply(strsplit(names(dl)[i],"\\."),function(x){x[1]}),names(mult_list))]
@@ -355,7 +350,7 @@ for(i in seq_along(dl)){
      SMP_LABEL="SMP_LABEL",
      STR_LABEL="cell",
      stratum="STR_LABEL",
-     path="C:/Users/User/Documents/SCF2016_FR/ECSASatlas/distance.wrap.output",
+     path="M:/SCF2016_FR/ECSASatlas/distance.wrap.output",
      pathMCDS=pathMCDS,
      multiplier=2/mult
    )
@@ -379,12 +374,12 @@ for(i in seq_along(dl)){
 #grid2<-spTransform(grid2,CRS(laea))
 
 #grid<-spTransform(grid,CRS(laea))
-#reg_atl<-readOGR("C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ATLBioregions",verbose=FALSE)
+#reg_atl<-readOGR("M:/SCF2016_FR/shapefiles",layer="ATLBioregions",verbose=FALSE)
 #reg_atl<-spTransform(reg_atl,CRS(proj4string(grid)))
 
 
 hex<-grid[1,]
-row.names(hex@data)<-sapply(slot(hex, "polygons"), function(x) slot(x, "ID"))
+row.names(hex@data)<-sapply(slot(hex,"polygons"),function(x){slot(x, "ID")})
 
 cols<-rev(c("darkred",colo.scale(seq(0,1,length.out=3),c("red","white"))))
 trans<-0.65
@@ -393,13 +388,13 @@ tex<-0.6
 monthEN<-c("December to March","April to July","August to November")
 monthFR<-c("Décembre à Mars","Avril à Juillet","Août à Novembre")
 monthNB<-list(c(12,1:3),4:7,8:11)
-#lgroup<-names(ml)
-lgroup<-c("DOVE.08091011")
+lgroup<-names(ml)
+#lgroup<-c("BLKI.04050607")
 ldens<-vector(mode="list",length(lgroup))
 names(ldens)<-lgroup
 i<-1
 
-for(i in seq_along(lgroup)){
+for(i in tail(seq_along(lgroup),2)[1]){
   
   group<-lgroup[i]
   
@@ -407,10 +402,11 @@ for(i in seq_along(lgroup)){
   	next
   }
 
-  png(paste0("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps/",gsub("\\.","_",group),"_.png"),width=6,height=4.8,units="in",res=500)
+  png(paste0("M:/SCF2016_FR/ECSASatlas/maps/",gsub("\\.","_",group),"_.png"),width=6,height=4.8,units="in",res=500)
 
   dens<-density.map(ml[[group]],by.stratum=TRUE)
-  temp<-ddply(dl[[group]],.(cell),function(k){length(unique(k$SMP_LABEL))})
+  dat<-dl[[group]]
+  temp<-ddply(dat,.(cell),function(k){length(unique(k$SMP_LABEL))})
   names(temp)<-c("Region","nbsamp")
   dens<-join(dens,temp)
   ldens[[i]]<-cbind(Group=unlist(strsplit(group,"\\."))[1],Month=unlist(strsplit(group,"\\."))[2],dens,stringsAsFactors=FALSE)
@@ -639,17 +635,22 @@ for(i in seq_along(lgroup)){
   ###text(coordinates(grid)[,1],coordinates(grid)[,2],grid$id,cex=0.2,col=alpha("black",0.3))
   
   m<-match(group,paste(nbobs$Alpha,nbobs$Month,sep="."))
-  sp<-d$English[match(nbobs$Alpha[m],d$Alpha)]
-  splat<-d$Latin[match(nbobs$Alpha[m],d$Alpha)]
-  spfr<-qc$NomFR[match(nbobs$Alpha[m],qc$CodeAN)]
-  
+  if(!is.na(m)){
+    sp<-d$English[match(nbobs$Alpha[m],d$Alpha)]
+    splat<-d$Latin[match(nbobs$Alpha[m],d$Alpha)]
+    spfr<-qc$NomFR[match(nbobs$Alpha[m],qc$CodeAN)]
+  }else{
+  	 sp<-unlist(strsplit(group,"\\."))[1]
+  	 splat<-sp
+  	 spfr<-sp
+  }
   mmonth<-match(strsplit(group,"\\.")[[1]][2],month_comb)
   
   text(3600000,2930000,sp,font=2,adj=c(1,0.5),cex=tex*1.4)
   text(3600000,2780000,spfr,font=2,adj=c(1,0.5),cex=tex*1.4)
   #text(3600000,,paste0(monthEN[mmonth]," / ",monthFR[mmonth]),adj=c(1,0.5),cex=tex)
-  text(3600000,2570000,paste("No. obs. / Nb obs. :  ",nbobs$nb_obs[m]),adj=c(1,0.5),cex=tex)
-  text(3600000,2450000,paste("No. samples / Taille d'échantillon :  ",nbobs$nb_sample[m]),adj=c(1,0.5),cex=tex)
+  text(3600000,2570000,paste("No. obs. / Nb obs. :  ",sum(dat$Count!="")),adj=c(1,0.5),cex=tex)
+  text(3600000,2450000,paste("No. samples / Taille d'échantillon :  ",length(unique(dat$SMP_LABEL))),adj=c(1,0.5),cex=tex)
  
   wmonth<-c("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")
   nmonth<-1:12
@@ -762,7 +763,7 @@ s$nbdays<-ifelse(is.na(s$nbdays),0,s$nbdays)
 
 for(i in seq_along(month_comb)[1:2]){
 	
-	png(paste0("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps/",paste0("season",month_comb[i]),".png"),width=6,height=4.8,units="in",res=500)
+	png(paste0("M:/SCF2016_FR/ECSASatlas/maps/",paste0("season",month_comb[i]),".png"),width=6,height=4.8,units="in",res=500)
 	
 	x<-s[s$MonthC==month_comb[i],]
 	
@@ -886,13 +887,13 @@ g<-ddply(s,.(cell,MonthC),function(i){
 ### WRITE FILES FOR OPEN DATA
 ###########################################
 
-write.xlsx(opendata,"C:/Users/User/Documents/SCF2016_FR/ECSASatlas/open_data.xlsx",row.names=FALSE,col.names=TRUE,sheetName="Densities",showNA=FALSE)
+write.xlsx(opendata,"M:/SCF2016_FR/ECSASatlas/open_data.xlsx",row.names=FALSE,col.names=TRUE,sheetName="Densities",showNA=FALSE)
 
-write.xlsx(g,"C:/Users/User/Documents/SCF2016_FR/ECSASatlas/open_data.xlsx",row.names=FALSE,col.names=TRUE,sheetName="Effort",append=TRUE,showNA=FALSE)
+write.xlsx(g,"M:/SCF2016_FR/ECSASatlas/open_data.xlsx",row.names=FALSE,col.names=TRUE,sheetName="Effort",append=TRUE,showNA=FALSE)
 
-writeOGR(grid[,"id"],dsn="C:/Users/User/Documents/SCF2016_FR/ECSASatlas",layer="atlas_grid",driver="ESRI Shapefile")
+writeOGR(grid[,"id"],dsn="M:/SCF2016_FR/ECSASatlas",layer="atlas_grid",driver="ESRI Shapefile")
 
-zip("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/atlas_images",list.files("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps",full.names=TRUE,pattern=".png")[1:2])
+zip("M:/SCF2016_FR/ECSASatlas/atlas_images",list.files("M:/SCF2016_FR/ECSASatlas/maps",full.names=TRUE,pattern=".png")[1:2])
 
 
 
