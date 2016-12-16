@@ -35,9 +35,7 @@ groupings<-as.data.frame(read_excel("C:/Users/User/Documents/SCF2016_FR/ECSASatl
 
 
 groupings<-as.data.frame(read_excel("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/groupingsSOMEC.xlsx",sheet="groups"))
-periods<-as.data.frame(read_excel("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/groupingsSOMEC.xlsx",sheet="periods"))
-periods$Start<-substr(periods$Start,6,10)
-periods$End<-substr(periods$End,6,10)
+groups<-read.csv("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/bird_groups.csv",header=TRUE,stringsAsFactors=FALSE) #this file is on my NEECbirds github
 
 
 ### get ECSAS database
@@ -159,19 +157,36 @@ grid$id<-paste0("g",grid$id)
 #grid$id<-1:nrow(grid)
 
 
+### GET DATA THAT IS IN CELLS ---------------------------
 
 dshp<-SpatialPointsDataFrame(SpatialPoints(matrix(c(d$LongStart,d$LatStart),ncol=2),CRS(ll)),data=d)
 o<-over(spTransform(dshp,CRS(proj4string(grid))),grid)
 d$STR_LABEL<-o$id
 d$cell<-o$id
 d<-d[!is.na(d$STR_LABEL),]
-d$Group<-groupings$Group2[match(d$Alpha,groupings$Alpha)]
-d$Group<-ifelse(is.na(d$Group),"",d$Group)
-d$Group2<-groupings$Group1[match(d$Alpha,groupings$Alpha)]
-d$Group2<-ifelse(is.na(d$Group2),"",d$Group2)
-d$Group3<-groupings$Group3[match(d$Alpha,groupings$Alpha)]
-d$Group3<-ifelse(is.na(d$Group3),"",d$Group3)
-d$Group<-d$Group3
+
+
+### GROUPINGS -------------------------------------------
+
+d$English<-as.character(d$English)
+d$English[grep("Genus: Gulls",d$English)]<-"Genus: Gulls"
+m<-match(d$English,groups$sp)
+
+# Check what does not have a name in the group file
+sort(table(d$English[m]))
+
+# If no species are in English because of an empty transect, we don't want ;a group name
+d$Group_detection<-ifelse(!d$English%in%c("",NA),groups$group_detection[m],"")
+d$Group_atlas<-ifelse(!d$English%in%c("",NA),groups$group_atlas[m],"")
+
+# Check what does not have a group name to make sure it is not an important species 
+empty<-is.na(d$Group_detection) | d$Group_detection==""
+sort(table(d$English[empty]))
+empty<-is.na(d$Group_atlas) | d$Group_detection==""
+sort(table(d$English[empty]))
+
+# Turn what does not have a group to empty values in species, distance, groups and count
+
 
 
 
@@ -181,7 +196,7 @@ d$Group<-d$Group3
 
 ### run model without empty transect to only get detection probability and the maximum number of observations compared to 32767
 
-group_list<-unique(d$Group) 
+group_list<-unique(d$Group_detection) 
 group_list<-group_list[group_list!=""]
 
 ### build new Watch IDs with days/cruise
