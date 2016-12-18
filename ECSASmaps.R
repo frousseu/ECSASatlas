@@ -408,7 +408,7 @@ monthEN<-c("December to March","April to July","August to November")
 monthFR<-c("Décembre à Mars","Avril à Juillet","Août à Novembre")
 monthNB<-list(c(12,1:3),4:7,8:11)
 lgroup<-names(ml)
-lgroup<-c("BLKI.04050607")
+#lgroup<-c("BLKI.04050607")
 ldens<-vector(mode="list",length(lgroup))
 names(ldens)<-lgroup
 i<-1
