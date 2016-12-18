@@ -413,7 +413,7 @@ ldens<-vector(mode="list",length(lgroup))
 names(ldens)<-lgroup
 i<-1
 
-for(i in tail(seq_along(lgroup),2)[1]){
+for(i in seq_along(lgroup)){
   
   group<-lgroup[i]
   
