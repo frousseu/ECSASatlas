@@ -100,7 +100,8 @@ m<-match(addQC$Alpha,qc$CodeFR)
 addQC$Alpha<-ifelse(!is.na(m),qc$CodeAN[m],addQC$Alpha)
 addQC$add<-1 # pour v?rifier les lignes restantes ? la fin
 addQC$Date<-ifelse(is.na(addQC$Date),substr(addQC$StartTime,1,10),addQC$Date)
-addQC$English<-ifelse(ecsas$English[match(addQC$Alpha,ecsas$Alpha)])
+m<-match(addQC$Alpha,ecsas$Alpha)
+addQC$English<-ifelse(!is.na(m),ecsas$English[m],"")
 
 
 ### build complete database
@@ -421,7 +422,7 @@ for(i in seq_along(lgroup)){
   	next
   }
 
-  png(paste0("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps/",gsub("\\.","_",group),"_.png"),width=6,height=4.8,units="in",res=500)
+  png(paste0("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps/",gsub("\\.","_",group),".png"),width=6,height=4.8,units="in",res=500)
 
   dens<-density.map(ml[[group]],by.stratum=TRUE)
   dat<-dl[[group]]
