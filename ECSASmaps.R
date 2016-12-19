@@ -33,8 +33,10 @@ library(tidyr)
 pathECSAS<-"C:/Users/User/Documents/SCF2016_FR/ECSASdata"#"Y:/Inventaires/Pélagiques/ECSAS"
 fileECSAS<-"Master ECSAS v 3.51.mdb"
 
-groupings<-as.data.frame(read_excel("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/groupingsSOMEC.xlsx",sheet="groups"))
-groups<-read.csv("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/bird_groups.csv",header=TRUE,stringsAsFactors=FALSE) #this file is on my NEECbirds github
+
+### get groups from github
+groups<-getURL("https://raw.githubusercontent.com/frousseu/NEECbirds/master/bird_groups.csv") # Ce fichier est sur mon github
+groups<-read.csv(text=groups,header=TRUE,stringsAsFactors=FALSE)
 
 
 ### get ECSAS database
