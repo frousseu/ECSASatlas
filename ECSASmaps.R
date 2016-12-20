@@ -105,6 +105,9 @@ addQC$Date<-ifelse(is.na(addQC$Date),substr(addQC$StartTime,1,10),addQC$Date)
 m<-match(addQC$Alpha,ecsas$Alpha)
 addQC$English<-ifelse(!is.na(m),ecsas$English[m],"")
 
+###########CEHCK FOR Count NA in data in addQC and final d object
+########### ALSO missing French names in Long-tailed Jaegers
+
 
 ### build complete database
 #d<-ecsas
@@ -416,7 +419,7 @@ ldens<-vector(mode="list",length(lgroup))
 names(ldens)<-lgroup
 i<-1
 
-for(i in seq_along(lgroup)){
+for(i in seq_along(lgroup)[46:length(dl)]){
   
   group<-lgroup[i]
   
@@ -450,8 +453,13 @@ for(i in seq_along(lgroup)){
   #r<-range(c(grid$val,grid$u,grid$l),na.rm=TRUE)
   r<-range(c(grid$val),na.rm=TRUE)
 
-  br<-suppressWarnings(classIntervals(unique(c(grid$val)), n=length(cols), style = "kmeans", rtimes = 1)$brks)
-  br2<-suppressWarnings(classIntervals(unique(c(grid$val)), n=length(cols), style = "quantile", rtimes = 1)$brks) #put this on graph to study quantile compared to kmeans
+  val<-grid$val
+  val<-val[!is.na(val)]
+  if(length(unique(val))<length(cols)){  # if the number of values is below the length of cols, classIntervals returns non-sense
+    val<-sort(c(val,seq(min(val),max(val),length.out=length(cols))))
+  }
+  br<-suppressWarnings(classIntervals(unique(c(val)), n=length(cols), style = "kmeans", rtimes = 1)$brks)
+  br2<-suppressWarnings(classIntervals(unique(c(val)), n=length(cols), style = "quantile", rtimes = 1)$brks) #put this on graph to study quantile compared to kmeans
   #br<-NULL
   
   grid$col<-colo.scale(c(r,grid$val),cols=cols,breaks=br)[-(1:2)]
@@ -614,7 +622,7 @@ for(i in seq_along(lgroup)){
    deleg<-c("0",paste0(c(">",rep("",length(se)-1)),if(is.numeric(se)){round(se,0)}else{se}))
    deleg<-paste(deleg,c("/ not visited (  )",rep("",length(deleg)-1)))
    deleg2<-c("0",paste0(c(">",rep("",length(se2)-1)),if(is.numeric(se2)){round(se2,0)}else{se2})) #show quantile instead
-   l<-legend(2500000,1100000,adj=c(0,0.5),title.adj=0,legend=rep("",length(deleg)),y.intersp=1.2,bty="n",title="Density(Birds / Km\U00B2)\nDensité (Oiseaux / Km\U00B2)",cex=tex*1)
+   l<-legend(2500000,1100000,adj=c(0,0.5),title.adj=0,legend=rep("",length(deleg)),y.intersp=1.2,bty="n",title="Density(Birds / km\U00B2)\nDensité (Oiseaux / km\U00B2)",cex=tex*1)
 	  
 	  ### add hexagonal density markers
 	  for(j in seq_along(l$text$x)){
@@ -626,7 +634,7 @@ for(i in seq_along(lgroup)){
 	    e<-elide(hex,shift=shift,rotate=0) ###!!!!!!!!!!!! la valeur du rotate doit être ajustée à la mitaine en fonction de la cellule choisie hex
 	    plot(e,col=col,add=TRUE,border=bord,lwd=0.5)
 	    text(coordinates(e)[,1]+100000,coordinates(e)[,2],label=deleg[j],cex=tex*1,adj=c(0,0.5))
-	    text(coordinates(e)[,1]-100000,coordinates(e)[,2],label=deleg2[j],cex=tex*1,adj=c(1,0.5),col="lightblue")
+	    #text(coordinates(e)[,1]-100000,coordinates(e)[,2],label=deleg2[j],cex=tex*1,adj=c(1,0.5),col="lightblue")
 	    if(j==1){
 	    	 width<-strwidth(deleg[j],cex=tex*1)
 	      points(coordinates(e)[,1]+100000+width-56000,coordinates(e)[,2]-7000,pch=4,cex=0.35,col="lightblue") 
@@ -732,8 +740,8 @@ for(i in seq_along(lgroup)){
   	        par(new=TRUE);
   								 barplot(temp$V1/temp$eff,las=2,cex.names=0.3,cex.lab=0.3,yaxt="n",cex.axis=0.3,border=NA,col=cols[length(cols)]);
   	        axis(4,cex.axis=0.3,cex.lab=0.3,tcl=-0.1,lwd=0.1,las=2,col.axis=cols[length(cols)]);
-  	        mtext("Effort (Km)",side=2,cex=0.3,line=0.6);
-  	        mtext("Birds / km\nOiseaux / Km",side=4,cex=0.3,line=0.5);
+  	        mtext("Effort (km)",side=2,cex=0.3,line=0.6);
+  	        mtext("Birds / km\nOiseaux / km",side=4,cex=0.3,line=0.5);
   	        mtext("Daily effort (km) and raw linear bird densities\nEffort journalier (km) et densités linéaires brutes d'oiseaux",side=1,cex=0.35,line=0.7)}
   								,x=c(1600000, 3350000),y=c(1860000, 2160000)) #c(-1125000, -750000)
   
@@ -765,7 +773,7 @@ for(i in seq_along(lgroup)){
   lines(sca[1,],rep(sca[2,1],2)-off,lwd=1)
   lines(rep(sca[1,1],2),sca[2,1]-off+c(-10000,10000),lwd=1)
   lines(rep(sca[1,2],2),sca[2,1]-off+c(-10000,10000),lwd=1)
-  text(((sca[1,2]-sca[1,1])/2)+sca[1,1],sca[2,1]-off-40000,paste((sca[1,2]-sca[1,1])/1000,"Km"),adj=c(0.5,0.5),cex=tex*0.5)
+  text(((sca[1,2]-sca[1,1])/2)+sca[1,1],sca[2,1]-off-40000,paste((sca[1,2]-sca[1,1])/1000,"km"),adj=c(0.5,0.5),cex=tex*0.5)
   
   rect(-60001100000,-70000000000,6000000000,-1290000,col=alpha("white",0.4),border=NA)
   #rect(-60001100000,2960000,6000000000,3000000000,col=alpha("white",0.4),border=NA)
@@ -882,7 +890,7 @@ for(i in seq_along(month_comb)[1:2]){
 	
 	mmonth<-match(month_comb[i],month_comb)
 	
-	text(1600000,2900000,"Effort in Km",font=2,adj=c(0,0.5),cex=tex*1.4)
+	text(1600000,2900000,"Effort in km",font=2,adj=c(0,0.5),cex=tex*1.4)
 	text(1600000,2720000,paste0(monthEN[mmonth],"\n",monthFR[mmonth]),adj=c(0,0.5),cex=tex)
 	
 	
