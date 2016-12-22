@@ -41,6 +41,10 @@ fileECSAS<-"Master ECSAS v 3.51.mdb"
 groups<-getURL("https://raw.githubusercontent.com/frousseu/NEECbirds/master/bird_groups.csv") # Ce fichier est sur mon github
 groups<-read.csv(text=groups,header=TRUE,stringsAsFactors=FALSE)
 
+### get data for french names from EC's official list on my github
+spname<-getURL("https://raw.githubusercontent.com/frousseu/ECSASatlas/master/EC_AVIAN_CORE_20161216.csv",.encoding="LATIN1") # Ce fichier est sur mon github
+spname<-read.csv(text=spname,header=TRUE,stringsAsFactors=FALSE)
+
 
 ### get ECSAS database
 ecsas<-ECSAS.extract(lat=c(39.33489,74.65058),long=c(-90.50775,-38.75887),sub.program=c("Atlantic","Quebec"),ecsas.drive=pathECSAS,ecsas.file=fileECSAS)
@@ -119,6 +123,7 @@ d<-join(ecsas,addQC,type="full")
 #d$Date<-substr(d$Date,1,10)
 d$Alpha<-ifelse(is.na(d$Alpha) | d$Alpha%in%c("RIEN","NOBI"),"",as.character(d$Alpha))
 d$English<-ifelse(is.na(d$English),"",as.character(d$English))
+d$French<-spname$French_Name[match(d$English,spname$English_Name)]
 d$Distance<-ifelse(is.na(d$Distance),"",as.character(d$Distance))
 dl<-c("A","B","C","D","c")
 dn<-c("25","75","150","250","150")
@@ -433,7 +438,7 @@ source("C:/Users/user/Documents/temp_maps.R",encoding="UTF-8")
 #reg_atl<-readOGR("C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ATLBioregions",verbose=FALSE)
 #reg_atl<-spTransform(reg_atl,CRS(proj4string(grid)))
 
-groupn<-c(Terns="Sternes",Shearwaters="Puffins","Storm-Petrels"="Océanites",Gannets="Fous","Diving Waterfowl"="Canards plongeurs",Phalaropes="Phalaropes",Jaegers="Petit labbes",Skuas="Grands labbes",Alcids="Alcidés",Gulls="Goélands et mouettes",Murres="Guillemots marmette ou de Brünnich")
+groupn<-c(Terns="Sternes",Shearwaters="Puffins","Storm-Petrels"="Océanites","Diving Waterfowl"="Canards plongeurs",Phalaropes="Phalaropes",Jaegers="Petits labbes",Skuas="Grands labbes",Alcids="Alcidés",Gulls="Goélands et mouettes",Murres="Guillemot marmette ou Marmette de Brünnich")
 
 hex<-grid[1,]
 row.names(hex@data)<-sapply(slot(hex,"polygons"),function(x){slot(x,"ID")})
@@ -444,7 +449,7 @@ mag<-1
 tex<-0.6
 monthNB<-list(c(12,1:3),4:7,8:11)
 lgroup<-names(ml)
-lgroup<-c("Gulls.08091011")
+#lgroup<-c("WWSC.12010203")
 ldens<-vector(mode="list",length(lgroup))
 names(ldens)<-lgroup
 i<-1
@@ -488,8 +493,9 @@ for(i in seq_along(lgroup)){
 	if(length(unique(val))<length(cols)){  # if the number of values is below the length of cols, classIntervals returns non-sense
 		val<-sort(c(val,seq(min(val),max(val),length.out=length(cols))))
 	}
-	br<-suppressWarnings(classIntervals(unique(c(val)), n=length(cols), style = "kmeans", rtimes = 1)$brks)
-	br2<-suppressWarnings(classIntervals(unique(c(val)), n=length(cols), style = "quantile", rtimes = 1)$brks) #put this on graph to study quantile compared to kmeans
+	br<-suppressWarnings(classIntervals(unique(val), n=length(cols), style = "kmeans", rtimes = 1)$brks)
+	br<-ifelse(br<0,0,br)
+	
 	#br<-NULL
 	
 	grid$col<-colo.scale(c(r,grid$val),cols=cols,breaks=br)[-(1:2)]
@@ -499,7 +505,14 @@ for(i in seq_along(lgroup)){
 	grid$coll<-colo.scale(c(r,grid$l),cols=cols,breaks=br)[-(1:2)]
 	grid$coll<-alpha(grid$coll,ifelse(is.na(grid$coll),1,trans))
 	ncv<-4
-	brcv<-suppressWarnings(classIntervals(unique(grid$cv), n=ncv, style = "kmeans", rtimes = 1)$brks)
+	
+	val<-grid$cv
+	val<-val[!is.na(val)]
+	if(length(unique(val))<ncv){  # if the number of values is below ncv, classIntervals returns non-sense and this is a hack to get a range of values
+		val<-sort(c(val,seq(2,max(val),length.out=ncv)))
+	}
+	brcv<-suppressWarnings(classIntervals(unique(val), n=ncv, style = "kmeans", rtimes = 1)$brks)
+	brcv<-ifelse(brcv<0,0,brcv) # hack to make sure all is over 0
 	cexcv<-seq(0.35,1,length.out=4)
 	cutcv<-cut(grid$cv,breaks=brcv)
 	grid$cutcv<-cutcv
@@ -648,12 +661,10 @@ for(i in seq_along(lgroup)){
 		lcols<-rev(alpha(tail(colo.scale(c(grid$val,se),cols=rev(cols),breaks=br),length(se)),trans))
 	}else{
 		se<-paste(format(round(br[-length(br)],1),nsmall=1,digits=0),format(round(br[-1],1),nsmall=1,digits=0),sep=" - ")
-		se2<-paste(round(br2[-length(br2)],1),round(br2[-1],1),sep=" - ") #illustrate results with quantiles instead
 		lcols<-alpha(cols,trans)
 	}
 	deleg<-c("0",paste0(c(">",rep("",length(se)-1)),if(is.numeric(se)){round(se,0)}else{se}))
 	deleg<-paste(deleg,c("/ not visited (  )",rep("",length(deleg)-1)))
-	deleg2<-c("0",paste0(c(">",rep("",length(se2)-1)),if(is.numeric(se2)){round(se2,0)}else{se2})) #show quantile instead
 	l<-legend(2500000,1100000,adj=c(0,0.5),title.adj=0,legend=rep("",length(deleg)),y.intersp=1.2,bty="n",title="Density (Birds / km\U00B2)\nDensité (Oiseaux / km\U00B2)",cex=tex*1)
 	
 	### add hexagonal density markers
@@ -666,7 +677,6 @@ for(i in seq_along(lgroup)){
 		e<-elide(hex,shift=shift,rotate=0) ###!!!!!!!!!!!! la valeur du rotate doit être ajustée à la mitaine en fonction de la cellule choisie hex
 		plot(e,col=col,add=TRUE,border=bord,lwd=0.5)
 		text(coordinates(e)[,1]+100000,coordinates(e)[,2],label=deleg[j],cex=tex*1,adj=c(0,0.5))
-		#text(coordinates(e)[,1]-100000,coordinates(e)[,2],label=deleg2[j],cex=tex*1,adj=c(1,0.5),col="lightblue")
 		if(j==1){
 			width<-strwidth(deleg[j],cex=tex*1)
 			points(coordinates(e)[,1]+100000+width-56000,coordinates(e)[,2]-7000,pch=4,cex=0.35,col="lightblue") 
@@ -723,7 +733,7 @@ for(i in seq_along(lgroup)){
 	if(nchar(gg[1])==4){
 		sp<-d$English[match(gg[1],d$Alpha)]
 		splat<-as.character(d$Latin[match(gg[1],d$Alpha)])
-		spfr<-qc$NomFR[match(gg[1],qc$CodeAN)]
+		spfr<-d$French[match(gg[1],d$Alpha)]
 	}else{
 		sp<-gg[1]
 		splat<-"  "
@@ -830,8 +840,9 @@ for(i in seq_along(lgroup)){
 	pathim<-"C:/Users/User/Documents/SCF2016_FR/ECSASatlas/temp/Huard-SCF/Huard.png"
 	logo2 <- readPNG(pathim,native=TRUE)
 	
+	rect(boxcut[1],boxcut[4]-80000,boxcut[1]+1000000+175000,boxcut[4],col="white",border=NA)
 	rasterImage(logo1,boxcut[1],boxcut[4]-80000,boxcut[1]+1000000,boxcut[4])
-	rasterImage(logo2,boxcut[1]+1000000-5000,boxcut[4]-80000,boxcut[1]+1000000+100000,boxcut[4]+5000)
+	rasterImage(logo2,boxcut[1]+1000000+50000,boxcut[4]-80000,boxcut[1]+1000000+150000,boxcut[4])
 	
 	
 	
