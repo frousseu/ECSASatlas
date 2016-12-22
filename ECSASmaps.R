@@ -24,6 +24,7 @@ library(FRutils)
 library(tidyr)
 library(RCurl)
 library(jpeg)
+library(png)
 #load("C:/Users/User/Documents/SCF2016_FR/yo9.RData")
 
 
@@ -157,7 +158,7 @@ d<-d[!is.na(d$STR_LABEL),]
 
 
 ##############################################
-### GROUPINGS
+### GROUPINGS ddd<-d
 ##############################################
 
 # there is a group for detection and a group for the atlas product
@@ -199,7 +200,7 @@ d$group_atlas<-ifelse(k1 & k2,"",d$group_atlas)
 ### run model without empty transect to only get detection probability and the maximum number of observations compared to 32767
 
 group_detection_list<-unique(d$group_detection) 
-group_detection_list<-group_detection_list[group_detection_list!=""]
+group_detection_list<-group_detection_list[!group_detection_list%in%c("",NA)]
 
 ### build new Watch IDs with days/cruise
 d$SMP_LABEL<-paste(d$CruiseID,d$Date,d$cell,sep="_")
@@ -295,7 +296,8 @@ g<-unique(groups[,c("group_detection","group_atlas")])
 g<-g[!(g[,1]=="" | g[,2]==""),]
 
 temp<-temp[g$group_detection]
-names(temp)<-g$group_atlas
+cond<-names(temp)!="Dovekie"
+names(temp)[cond]<-g$group_atlas[cond]
 
 mult_list<-temp
 mult_list<-mult_list[match(d$group_atlas[match(unique(d$Alpha),d$Alpha)],names(mult_list))]
@@ -303,6 +305,11 @@ names(mult_list)<-unique(d$Alpha)
 mult_list<-mult_list[!is.na(mult_list)]
 mult_list<-c(mult_list,temp) ### added values for groups
 mult_list<-unlist(mult_list)
+
+# add good Dovekie value
+mult_list[which(names(mult_list)=="DOVE")]<-unname(mult_list[which(names(mult_list)=="Dovekie")]) 
+# add Murres
+mult_list<-c(mult_list,Murres=unname(mult_list[which(names(mult_list)=="Alcids")]))
 
 
 
@@ -369,6 +376,7 @@ names(ml)<-names(dl)
 for(i in seq_along(dl)){
   
    x<-dl[[i]]
+   #x<-x[x$SMP_LABEL%in%sample(unique(x$SMP_LABEL),100),]
    mult<-mult_list[match(sapply(strsplit(names(dl)[i],"\\."),function(x){x[1]}),names(mult_list))]
    x$SMP_LABEL<-as.numeric(as.factor(x$SMP_LABEL))
    x$STR_AREA<-gArea(grid[1,])/1000/1000
