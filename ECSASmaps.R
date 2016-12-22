@@ -64,14 +64,15 @@ laea<-"+proj=laea +lat_0=50 +lon_0=-65"
 ## comes form natural earth
 pathshp<-"C:/Users/User/Documents/SCF2016_FR/shapefiles"
 eu<-readOGR(dsn=pathshp,layer="ne_10m_admin_0_countries",encoding="UTF-8")
-eu<-eu[eu$GEOUNIT%in%c("Greenland","Iceland","United Kingdom","Ireland","France","Spain","Portugal"),]
+eu<-eu[eu$GEOUNIT%in%c("Greenland","Iceland","United Kingdom","Ireland","France","Spain","Portugal","Norway","Denmark") | eu$SUBUNIT%in%c("Faroe Islands","Isle of Man"),]
 eu<-spTransform(eu,CRS(laea))
 gr<-eu[eu$ADMIN=="Greenland",]
 na<-readOGR(dsn=pathshp,layer="ne_10m_admin_1_states_provinces",encoding="UTF-8")
 na<-na[na$admin%in%c("United States of America","Canada"),]
 na<-gIntersection(na,bbox2pol(na,ex=-1),byid=TRUE)
 na<-spTransform(na,CRS(laea))
-boxcut<-c(-1848241,3712932,-1413652,3035287) ####!!!!!! On coupe avec cette bbox (déterminée en produisant les pngs avec l'objet boxcut) pour éviter les problèmes de transparence liés au dépassement des polygones des cadres
+boxcut<-c(-1848241,3712932,-1413652,3035287) 
+### On coupe avec cette bbox (déterminée en produisant les pngs avec l'objet boxcut) pour éviter les problèmes de transparence liés au dépassement des polygones des cadres
 na<-gIntersection(na,bbox2pol(boxcut,ex=-1,proj4string=laea),byid=TRUE)
 eu<-gIntersection(eu,bbox2pol(boxcut,ex=-1,proj4string=laea),byid=TRUE)
 gr<-gIntersection(gr,bbox2pol(boxcut,ex=-1,proj4string=laea),byid=TRUE)
@@ -122,6 +123,7 @@ addQC$English<-ifelse(!is.na(m),ecsas$English[m],"")
 d<-join(ecsas,addQC,type="full")
 #d$Date<-substr(d$Date,1,10)
 d$Alpha<-ifelse(is.na(d$Alpha) | d$Alpha%in%c("RIEN","NOBI"),"",as.character(d$Alpha))
+d$English<-gsub("Storm Petrel","Storm-Petrels",d$English)
 d$English<-ifelse(is.na(d$English),"",as.character(d$English))
 d$French<-spname$French_Name[match(d$English,spname$English_Name)]
 d$Distance<-ifelse(is.na(d$Distance),"",as.character(d$Distance))
@@ -362,7 +364,8 @@ dl3<-dlply(d3[d3$Alpha!="",],.(Alpha,MonthC),function(x){ # data list
 dl<-c(dl1,dl2,dl3)
 keep<-sapply(dl,function(x){sum(x$Alpha!="")})
 dl<-dl[keep>10] #on enlève ce qui n'a pas assez d'observations
-w<-which(substr(names(dl),1,2)=="UN" | substr(names(dl),1,4)=="ALCI" | substr(names(dl),1,7)=="Gannets") 
+gro<-sapply(strsplit(names(dl),"\\."),function(i){i[[1]]})
+w<-which(substr(names(dl),1,2)=="UN" | substr(names(dl),1,4)%in%c("ALCI","MURA","WWSC","DCCO","COLO","COEI","LTDU","BLSC") | substr(names(dl),1,7)%in%c("Gannets","Fulmars") | gro%in%c("Diving Waterfowl")) 
 dl<-dl[-w] #on enlève les espèces inconnues, les ALCI et les Gannets
 ml<-vector(mode="list",length=length(dl))
 names(ml)<-names(dl)
@@ -431,14 +434,51 @@ source("C:/Users/user/Documents/temp_maps.R",encoding="UTF-8")
 ### PRODUCE ATLAS FIGURES
 ###########################################
 
+### build latitudes
+m<-expand.grid(seq(-160,20,by=0.2),seq(25,85,by=5))
+lat<-SpatialPoints(m,proj4string=CRS(ll))
+lat<-spTransform(lat,CRS(proj4string(grid)))
+xxlat<-boxcut[1]#par("usr")[1]
+m<-expand.grid(xxlat,seq(boxcut[3],boxcut[4],by=100))
+p<-SpatialPoints(m,proj4string=CRS(proj4string(grid)))
+p2<-spTransform(p,CRS(ll))
+r<-range(coordinates(p2)[,2])
+r<-5*round(r/5) 
+selat<-seq(r[1],r[2],by=5)
+yylat<-sapply(selat,function(k){
+	coordinates(p)[which.min(abs(coordinates(p2)[,2]-k)),2]	
+})
+o1<-over(lat,na)
+o2<-over(lat,eu)
+olat<-!is.na(o1) | !is.na(o2)
+
+### build longitudes
+m<-expand.grid(seq(-160,20,by=10),seq(25,85,by=0.1))
+lon<-SpatialPoints(m,proj4string=CRS(ll))
+lon<-spTransform(lon,CRS(proj4string(grid)))
+yylon<-boxcut[3]+100000#par("usr")[3]
+m<-expand.grid(seq(boxcut[1],boxcut[2],by=100),yylon)
+p<-SpatialPoints(m,proj4string=CRS(proj4string(grid)))
+p2<-spTransform(p,CRS(ll))
+r<-range(coordinates(p2)[,1])
+r<-10*round(r/10) 
+selon<-seq(r[1],r[2],by=10)
+xxlon<-sapply(selon,function(k){
+	coordinates(p)[which.min(abs(coordinates(p2)[,1]-k)),1]	
+})
+o1<-over(lon,na)
+o2<-over(lon,eu)
+olon<-!is.na(o1) | !is.na(o2)
+
+
+
 
 #grid2<-spTransform(grid2,CRS(laea))
-
 #grid<-spTransform(grid,CRS(laea))
 #reg_atl<-readOGR("C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ATLBioregions",verbose=FALSE)
 #reg_atl<-spTransform(reg_atl,CRS(proj4string(grid)))
 
-groupn<-c(Terns="Sternes",Shearwaters="Puffins","Storm-Petrels"="Océanites","Diving Waterfowl"="Canards plongeurs",Phalaropes="Phalaropes",Jaegers="Petits labbes",Skuas="Grands labbes",Alcids="Alcidés",Gulls="Goélands et mouettes",Murres="Guillemot marmette ou Marmette de Brünnich")
+groupn<-c(Terns="Sternes",Shearwaters="Puffins","Storm-Petrels"="Océanites","Diving Waterfowl"="Canards plongeurs",Phalaropes="Phalaropes",Jaegers="Petits labbes",Skuas="Grands labbes",Alcids="Alcidés",Gulls="Goélands et mouettes",Murres="Marmettes (Genre Uria)")
 
 hex<-grid[1,]
 row.names(hex@data)<-sapply(slot(hex,"polygons"),function(x){slot(x,"ID")})
@@ -447,9 +487,12 @@ cols<-rev(c("darkred",colo.scale(seq(0,1,length.out=3),c("red","white"))))
 trans<-0.65
 mag<-1
 tex<-0.6
+ma<-max(do.call("rbind",lapply(ml,density.map,by.stratum=TRUE))$"% of var.",na.rm=TRUE)
+ma<-50*ceiling(ma/50)
+brcv<-c(0,25,50,100,ma)#CV scale
 monthNB<-list(c(12,1:3),4:7,8:11)
 lgroup<-names(ml)
-#lgroup<-c("WWSC.12010203")
+lgroup<-c("NOFU.08091011")
 ldens<-vector(mode="list",length(lgroup))
 names(ldens)<-lgroup
 i<-1
@@ -493,7 +536,7 @@ for(i in seq_along(lgroup)){
 	if(length(unique(val))<length(cols)){  # if the number of values is below the length of cols, classIntervals returns non-sense
 		val<-sort(c(val,seq(min(val),max(val),length.out=length(cols))))
 	}
-	br<-suppressWarnings(classIntervals(unique(val), n=length(cols), style = "kmeans", rtimes = 1)$brks)
+	br<-suppressWarnings(classIntervals(val,n=length(cols),style="kmeans",rtimes = 1)$brks)
 	br<-ifelse(br<0,0,br)
 	
 	#br<-NULL
@@ -506,13 +549,15 @@ for(i in seq_along(lgroup)){
 	grid$coll<-alpha(grid$coll,ifelse(is.na(grid$coll),1,trans))
 	ncv<-4
 	
-	val<-grid$cv
-	val<-val[!is.na(val)]
-	if(length(unique(val))<ncv){  # if the number of values is below ncv, classIntervals returns non-sense and this is a hack to get a range of values
-		val<-sort(c(val,seq(2,max(val),length.out=ncv)))
-	}
-	brcv<-suppressWarnings(classIntervals(unique(val), n=ncv, style = "kmeans", rtimes = 1)$brks)
-	brcv<-ifelse(brcv<0,0,brcv) # hack to make sure all is over 0
+	#val<-grid$cv
+	#val<-val[!is.na(val)]
+	#if(length(unique(val))<ncv){  # if the number of values is below ncv, classIntervals returns non-sense and this is a hack to get a range of values
+	#	val<-sort(c(val,seq(2,max(val),length.out=ncv)))
+	#}
+	#brcv<-suppressWarnings(classIntervals(unique(val), n=ncv, style = "kmeans", rtimes = 1)$brks)
+	#brcv<-ifelse(brcv<0,0,brcv) # hack to make sure all is over 0
+	
+	
 	cexcv<-seq(0.35,1,length.out=4)
 	cutcv<-cut(grid$cv,breaks=brcv)
 	grid$cutcv<-cutcv
@@ -525,14 +570,12 @@ for(i in seq_along(lgroup)){
 	### PLOT
 	par(mar=c(0,0,0,0),mgp=c(0.5,0.1,0))
 	k<-!is.na(grid$val)
-	plot(grid,bg="#7AAFD1",border="#7AAFD1",xaxs="i",yaxs="i",xlim=c(-1848241,3712932),ylim=c(-1413652,3035287))
-	
+	#plot(grid,bg="#7AAFD1",border="#7AAFD1",xaxs="i",yaxs="i",xlim=c(-1848241,3712932),ylim=c(-1413652,3035287))
+	plot(1,1,type="n",xaxs="i",yaxs="i",xlim=c(-1848241,3712932),ylim=c(-1413652,3035287))
 	boxcut<-par("usr")
 	
-	#plot(grid)
-	#plot(map.osm2,xlim=bbox(grid)[1,],ylim=bbox(grid)[2,],add=TRUE)
-	#plot(grid[k,],col="white",bg=alpha("lightblue",0.5),border="grey75",xlim=bbox(grid)[1,],ylim=bbox(grid)[2,],add=TRUE)
-	
+
+	### plot bathymetry shading
 	l<-c(75,72,69,66,63,60,57,54)-5 #c(70,65,60,55,50,45,42,39)
 	plot(b0,col=hcl(240,50,l[1]),border=NA,add=TRUE)
 	plot(b200,col=hcl(240,50,l[2]),border=NA,add=TRUE)
@@ -546,39 +589,9 @@ for(i in seq_along(lgroup)){
 	db<-hcl(240,50,l[7])
 	
 	
-	### draw latitudes
-	m<-expand.grid(seq(-160,20,by=0.2),seq(25,85,by=5))
-	lat<-SpatialPoints(m,proj4string=CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"))
-	lat<-spTransform(lat,CRS(proj4string(grid)))
+	### draw latitudes and longitudes
 	plot(lat,add=TRUE,col="grey20",pch=16,cex=0.01)
-	
-	xxlat<-par("usr")[1]
-	m<-expand.grid(xxlat,seq(par("usr")[3],par("usr")[4],by=100))
-	p<-SpatialPoints(m,proj4string=CRS(proj4string(grid)))
-	p2<-spTransform(p,CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"))
-	r<-range(coordinates(p2)[,2])
-	r<-5*round(r/5) 
-	selat<-seq(r[1],r[2],by=5)
-	yylat<-sapply(selat,function(k){
-		coordinates(p)[which.min(abs(coordinates(p2)[,2]-k)),2]	
-	})
-	
-	### draw longitudes
-	m<-expand.grid(seq(-160,20,by=10),seq(25,85,by=0.1))
-	lon<-SpatialPoints(m,proj4string=CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"))
-	lon<-spTransform(lon,CRS(proj4string(grid)))
 	plot(lon,add=TRUE,col="grey20",pch=16,cex=0.01)
-	
-	yylon<-par("usr")[3]+100000
-	m<-expand.grid(seq(par("usr")[1],par("usr")[2],by=100),yylon)
-	p<-SpatialPoints(m,proj4string=CRS(proj4string(grid)))
-	p2<-spTransform(p,CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"))
-	r<-range(coordinates(p2)[,1])
-	r<-10*round(r/10) 
-	selon<-seq(r[1],r[2],by=10)
-	xxlon<-sapply(selon,function(k){
-		coordinates(p)[which.min(abs(coordinates(p2)[,1]-k)),1]	
-	})
 	
 	
 	### plot grid and values
@@ -622,14 +635,11 @@ for(i in seq_along(lgroup)){
 	
 	
 	### plot shapefiles
-	plot(eu,add=TRUE,lwd=0.1,border=NA,col=alpha("grey75",0.65))
-	plot(na,add=TRUE,lwd=0.1,border=NA,col=alpha("grey75",0.65))
+	plot(eu,add=TRUE,lwd=0.5,border="grey55",col=alpha("grey75",0.65))
+	plot(na,add=TRUE,lwd=0.5,border="grey55",col=alpha("grey75",0.65))
 	plot(gl,col=pb,lwd=0.5,border="grey55",add=TRUE)
 	
-	plot(eu,add=TRUE,lwd=0.5,border="grey55")
-	plot(na,add=TRUE,lwd=0.5,border="grey55")
-	
-	### bathymetry lines
+ ### plot bathymetry lines to go over cells
 	plot(gUnionCascaded(b200),border=alpha("black",0.2),add=TRUE,lwd=0.5)
 	plot(gUnionCascaded(b1000),border=alpha("black",0.2),add=TRUE,lwd=0.5)
 	plot(b2000,border=alpha("black",0.2),add=TRUE,lwd=0.5)
@@ -641,19 +651,17 @@ for(i in seq_along(lgroup)){
 	### SPECIES INFO BOX
 	rect(1100000,1560000,3800000,3100000,col=alpha("white",0.4),border=NA) #2260000
 	rect(1100000,2680000,3800000,3100000,col=alpha("white",0.25),border=NA)
-	rect(1100000,2240000,3800000,2350000,col=alpha("white",0.25),border=NA)
+	rect(1100000,2240000,3800000,2520000,col=alpha("white",0.25),border=NA)
 	rect(2450000,-1000000,3650000,1225000,col=alpha("white",0.4),border=NA)
 	
+	### add this to keep lines in the east of greenland, but not overwrite cells in the west
 	hide<-gIntersection(gr,bbox2pol(c(1100000,3800000,1560000,3100000),proj4string=laea)) # plot over the topright box to hide it but not hide cells in the west of greenland
 	plot(hide,add=TRUE,border=NA,col="grey75")
 	plot(gr,add=TRUE,lwd=0.5,border="grey55")
 	
-	o1<-over(lat,na)
-	o2<-over(lat,eu)
-	plot(lat[!is.na(o1) | !is.na(o2)],add=TRUE,col="grey30",pch=16,cex=0.01)
-	o1<-over(lon,na)
-	o2<-over(lon,eu)
-	plot(lon[!is.na(o1) | !is.na(o2)],add=TRUE,col="grey30",pch=16,cex=0.01)
+	### replot lat and lon over land to make them darker on land
+	plot(lat[olat],add=TRUE,col="grey30",pch=16,cex=0.01)
+	plot(lon[olon],add=TRUE,col="grey30",pch=16,cex=0.01)
 	
 	### LEGEND DENSITY
 	if(is.null(br)){
@@ -691,14 +699,13 @@ for(i in seq_along(lgroup)){
 	#points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=grid$cex,col="#7AAFD1")
 	##points(coordinates(grid)[,1],coordinates(grid)[,2],pch=1,cex=mag*(grid$cv/max(grid$cv,na.rm=TRUE)),col=alpha("green",0.8))
 	#####points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=mag*(grid$cv/max(grid$cv,na.rm=TRUE)),col=alpha("black",0.5))
-	se<-seq(min(grid$cv,na.rm=TRUE),max(grid$cv,na.rm=TRUE),length.out=4)
 	#####se<-c(25,50,100,200,300)
 	#legend(2240000,-200000,pch=1,col="lightblue",pt.cex=1.2*mag*(se/max(grid$cv,na.rm=TRUE)),y.intersp=0.75,legend=paste0(c(rep("",length(se)-1),">"),round(se,0)),bty="n",title="CV (%)",cex=tex*1.3)
 	
 	# ideally, we should use the next lowest CV as the lower bound because the lowest corresponds to nbsamp = 1 and it is not displayed
 	
 	cvleg<-strsplit(gsub("\\)|\\(|\\]|\\[","",gsub(","," - ",levels(cutcv)))," - ")
-	cvleg<-c("N/A (n = 1)",sapply(cvleg,function(k){paste(gsub(" ","",format(as.numeric(k),nsmall=1,digits=0)),collapse=" - ")}))
+	cvleg<-c("N/A (n = 1)",sapply(cvleg,function(k){paste(gsub(" ","",k),collapse=" - ")}))
 	l<-legend(2500000,-110000,adj=c(1,0.5),title.adj=0,y.intersp=1.2,legend=rep("",length(cvleg)),bty="n",title="Coefficient of variation (%)\nCoefficient de variation (%)",cex=tex*1)
 	
 	for(j in seq_along(l$text$x)){
@@ -741,22 +748,22 @@ for(i in seq_along(lgroup)){
 	}
 	mmonth<-match(strsplit(group,"\\.")[[1]][2],month_comb)
 	
-	text(1600000,2930000,sp,font=2,adj=c(0,0.5),cex=tex*1.4)
-	text(1600000,2780000,spfr,font=2,adj=c(0,0.5),cex=tex*1.4)
-	text(3600000,2930000,unlist(strsplit(splat," "))[[1]],font=3,adj=c(1,0.5),cex=tex*1.1)
-	text(3600000,2780000,unlist(strsplit(splat," "))[[2]],font=3,adj=c(1,0.5),cex=tex*1.1)
+	text(1600000,2940000,sp,font=2,adj=c(0,0.5),cex=tex*1.4)
+	text(1600000,2790000,spfr,font=2,adj=c(0,0.5),cex=tex*1.4)
+	text(3600000,2940000,unlist(strsplit(splat," "))[[1]],font=3,adj=c(1,0.5),cex=tex*1.1)
+	text(3600000,2790000,unlist(strsplit(splat," "))[[2]],font=3,adj=c(1,0.5),cex=tex*1.1)
 	
-	text(1600000,2570000,"No. of records / Nb. de mentions :",adj=c(0,0.5),cex=tex)
-	text(1600000,2450000,"Sample size / Taille d'échantillon :",adj=c(0,0.5),cex=tex)
-	text(3600000,2570000,sum(dat$Count!="",na.rm=TRUE),adj=c(1,0.5),cex=tex)
-	text(3600000,2450000,length(unique(dat$SMP_LABEL)),adj=c(1,0.5),cex=tex)
+	text(1600000,2440000,"No. of records / Nb. de mentions :",adj=c(0,0.5),cex=tex) #diff de 120000
+	text(1600000,2320000,"Sample size / Taille d'échantillon :",adj=c(0,0.5),cex=tex)
+	text(3600000,2440000,sum(dat$Count!="",na.rm=TRUE),adj=c(1,0.5),cex=tex)
+	text(3600000,2320000,length(unique(dat$SMP_LABEL)),adj=c(1,0.5),cex=tex)
 	
 	wmonthEN<-c("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")
 	wmonthFR<-c("Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc")
 	nmonth<-1:12
 	se<-seq(1600000,3500000,length.out=12)
-	text(se,2325000,wmonthEN,col=ifelse(nmonth%in%monthNB[[mmonth]],"black","grey65"),cex=0.35,adj=c(0,0.5))
-	text(se,2275000,wmonthFR,col=ifelse(nmonth%in%monthNB[[mmonth]],"black","grey65"),cex=0.35,adj=c(0,0.5))
+	text(se,2630000,wmonthEN,col=ifelse(nmonth%in%monthNB[[mmonth]],"red","grey55"),font=ifelse(nmonth%in%monthNB[[mmonth]],2,1),cex=0.35,adj=c(0,0.5))
+	text(se,2580000,wmonthFR,col=ifelse(nmonth%in%monthNB[[mmonth]],"red","grey55"),font=ifelse(nmonth%in%monthNB[[mmonth]],2,1),cex=0.35,adj=c(0,0.5))
 	
 	
 	### barplot
@@ -789,8 +796,8 @@ for(i in seq_along(lgroup)){
 	subplot({barplot(tab,las=2,cex.names=0.3,cex.lab=0.3,cex.axis=0.3,yaxt="n",border=NA,ylab="",col=db);
 		axis(2,cex.axis=0.3,cex.lab=0.3,tcl=-0.1,lwd=0.1,las=2,col.axis=db);
 		par(new=TRUE);
-		barplot(temp$V1/temp$eff,las=2,cex.names=0.3,cex.lab=0.3,yaxt="n",cex.axis=0.3,border=NA,col=cols[length(cols)]);
-		axis(4,cex.axis=0.3,cex.lab=0.3,tcl=-0.1,lwd=0.1,las=2,col.axis=cols[length(cols)]);
+		barplot(temp$V1/temp$eff,las=2,cex.names=0.3,cex.lab=0.3,yaxt="n",cex.axis=0.3,border=NA,col=cols[length(cols)-1]);
+		axis(4,cex.axis=0.3,cex.lab=0.3,tcl=-0.1,lwd=0.1,las=2,col.axis=cols[length(cols)-1]);
 		mtext("Effort (km)",side=2,cex=0.3,line=0.6);
 		mtext("Birds / km\nOiseaux / km",side=4,cex=0.3,line=0.5);
 		mtext("Daily effort (km) and raw linear bird densities\nEffort journalier (km) et densités linéaires brutes d'oiseaux",side=1,cex=0.35,line=0.7)}
@@ -828,8 +835,8 @@ for(i in seq_along(lgroup)){
 	
 	rect(-60001100000,-70000000000,6000000000,-1290000,col=alpha("white",0.4),border=NA)
 	#rect(-60001100000,2960000,6000000000,3000000000,col=alpha("white",0.4),border=NA)
-	text(par("usr")[1],-1320000,"Predicted densities are derived from a distance sampling model using Distance 6.0 and the GeoAviR R package with the Eastern Canadian Seabirds-at-Sea database. Detection probabilities have been estimated by species guilds. The number of samples corresponds to the number of CruiseID/Date/Cell combinations.",cex=tex*0.4,adj=c(-0.01,0.5))
-	text(par("usr")[1],-1370000,"Ces densités proviennent de modèles d'échantillonnage par distance basé sur le logiciel Distance 6.0 et le package GeoAviR et utilisant les données des Oiseaux en mer de l'est du Canada. Les probabilités de détection ont été estimés pour des groupes d'espèces similaires. La taille d'échantillon correspond au nombre de combinaisons Croisières/Dates/Cellules.",cex=tex*0.4,adj=c(-0.01,0.5))
+	text(par("usr")[1],-1320000,"Predicted densities are derived from distance sampling models using Distance 6.0 and the GeoAviR R package with the Eastern Canadian Seabirds-at-Sea database. The sample size corresponds to the number of cruiseID/date/cell combinations.",cex=tex*0.4,adj=c(-0.01,0.5))
+	text(par("usr")[1],-1370000,"Ces densités proviennent de modèles d'échantillonnage par distance basés sur Distance 6.0 et le package R GeoAviR et utilisant les données du Suivi des oiseaux en mer de l'est du Canada. La taille d'échantillon correspond au nombre de combinaisons croisière/date/cellule.",cex=tex*0.4,adj=c(-0.01,0.5))
 	
 	### PGRID
 	#pgrid(25,cex=0.15)
@@ -840,7 +847,7 @@ for(i in seq_along(lgroup)){
 	pathim<-"C:/Users/User/Documents/SCF2016_FR/ECSASatlas/temp/Huard-SCF/Huard.png"
 	logo2 <- readPNG(pathim,native=TRUE)
 	
-	rect(boxcut[1],boxcut[4]-80000,boxcut[1]+1000000+175000,boxcut[4],col="white",border=NA)
+	rect(boxcut[1],boxcut[4]-90000,boxcut[1]+1000000+175000,boxcut[4],col="white",border=NA)
 	rasterImage(logo1,boxcut[1],boxcut[4]-80000,boxcut[1]+1000000,boxcut[4])
 	rasterImage(logo2,boxcut[1]+1000000+50000,boxcut[4]-80000,boxcut[1]+1000000+150000,boxcut[4])
 	
