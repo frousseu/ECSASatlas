@@ -998,14 +998,14 @@ names(opendata)[which(names(opendata)=="Estimates")]<-"Density"
 
 #g<-ddply(opendata,.(Region,Month),function(i){unique(i$nbsamp)})
 
-eg<-expand.grid(cell=unique(grid$id),MonthC=unique(s$MonthC))
+eg<-expand.grid(cell=unique(grid$id),MonthC=unique(d$MonthC),stringsAsFactors=FALSE)
 x<-left_join(eg,d)
 
 ### éliminer les sp
 g<-ddply(x,.(cell,MonthC),function(i){
 	nbspecies<-length(na.omit(unique(i$Alpha))) #éliminer les sp, UN, ALCI, espèces terrestres
-	nbind<-sum(i$Count,na.rm=TRUE)
-	nbobs<-sum(i$Count>0,na.rm=TRUE)
+	nbind<-sum(as.numeric(i$Count),na.rm=TRUE)
+	nbobs<-sum(as.numeric(i$Count)>0,na.rm=TRUE)
 	nbdays<-length(na.omit(unique(i$Date)))
 	nbsamples<-length(na.omit(unique(i$SMP_LABEL)))
 	nbkm<-sum(i$SMP_EFFORT[!duplicated(i$SMP_LABEL)],na.rm=TRUE)
