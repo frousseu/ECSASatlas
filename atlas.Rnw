@@ -164,7 +164,7 @@
 <<region_atlantic, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE>>=
 	
 par(mar=c(1,1,1,1))
-plot(reg_atl,main="Regions")
+plot(reg_atl,main="regions")
 box()
 	
 @
