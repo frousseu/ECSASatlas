@@ -485,8 +485,7 @@ olon<-!is.na(o1) | !is.na(o2)
 #############################
 #############################
 
-groupn<-list(Terns=c("All Terns","Sternes"),Shearwaters=c("All Shearwaters (without fulmars)","Puffins"),"Storm-Petrels"=c("All Storm-Petrels","Océanites"),"Diving Waterfowl"=c("Diving Waterfowl","Canards plongeurs"),Phalaropes=c("All Phalaropes","Phalaropes"),Jaegers=c("All Jaegers","Petits labbes"),Skuas=c("All Skuas","Grands labbes"),Alcids=c("All Alcids","Alcidés"),Gulls=c("All Gulls","Goélands et mouettes"),Murres=c("All Murres","Marmettes (genre Uria)"))
-
+groupn<-list(Terns=c("All Terns","Toutes les sternes"),Shearwaters=c("All Shearwaters","Tous les puffins"),"Storm-Petrels"=c("All Storm-Petrels","Toutes les océanites"),"Diving Waterfowl"=c("Diving Waterfowl","Canards plongeurs"),Phalaropes=c("All Phalaropes","Tous les phalaropes"),Jaegers=c("All Jaegers","Tous les petits labbes"),Skuas=c("All Skuas","Tous les grands labbes"),Alcids=c("All Alcids","Tous les alcidés"),Gulls=c("All Gulls","Tous les goélands et mouettes"),Murres=c("All Murres","Guillemot marmette et marmettes"))
 
 hex<-grid[1,] #this will be used for the legend
 row.names(hex@data)<-sapply(slot(hex,"polygons"),function(x){slot(x,"ID")})
@@ -500,7 +499,7 @@ ma<-50*ceiling(ma/50)
 brcv<-c(0,25,50,100,ma)#CV scale
 monthNB<-list(c(12,1:3),4:7,8:11)
 lgroup<-names(ml)
-lgroup<-c("Alcids.08091011","Gulls.08091011")
+lgroup<-c("Skuas.08091011","Murres.08091011")
 ldens<-vector(mode="list",length(lgroup))
 names(ldens)<-lgroup
 i<-1
@@ -532,9 +531,9 @@ for(i in seq_along(lgroup)){
 	
 	grid$nbsamp<-dens$"nbsamp"[match(grid$id,dens$Region)]
 	
-	#r<-range(c(grid$val,grid$u,grid$l),na.rm=TRUE)
 	r<-range(c(grid$val),na.rm=TRUE)
 	
+	### CREATE BRAKES FOR DENSITIES
 	val<-grid$val
 	val<-val[!is.na(val)]
 	if(length(unique(val))<length(cols)){  # if the number of values is below the length of cols, classIntervals returns non-sense
@@ -543,33 +542,25 @@ for(i in seq_along(lgroup)){
 	br<-suppressWarnings(classIntervals(val,n=length(cols),style="kmeans",rtimes = 1)$brks)
 	br<-ifelse(br<0,0,br)
 	
-	#br<-NULL
-	
+	### ADD VALUES OF COLORS TO GRID
 	grid$col<-colo.scale(c(r,grid$val),cols=cols,breaks=br)[-(1:2)]
 	grid$col<-alpha(ifelse(is.na(grid$cv),NA,grid$col),trans)
 	grid$colu<-colo.scale(c(r,grid$u),cols=cols,breaks=br)[-(1:2)]
 	grid$colu<-alpha(grid$colu,ifelse(is.na(grid$colu),1,trans))
 	grid$coll<-colo.scale(c(r,grid$l),cols=cols,breaks=br)[-(1:2)]
 	grid$coll<-alpha(grid$coll,ifelse(is.na(grid$coll),1,trans))
-	ncv<-4
 	
-	#val<-grid$cv
-	#val<-val[!is.na(val)]
-	#if(length(unique(val))<ncv){  # if the number of values is below ncv, classIntervals returns non-sense and this is a hack to get a range of values
-	#	val<-sort(c(val,seq(2,max(val),length.out=ncv)))
-	#}
-	#brcv<-suppressWarnings(classIntervals(unique(val), n=ncv, style = "kmeans", rtimes = 1)$brks)
-	#brcv<-ifelse(brcv<0,0,brcv) # hack to make sure all is over 0
-	
-	
+	### CREATE BREAKS FOR CV (brcv is global and produced before the loop)
+	ncv<-length(brcv)-1
 	cexcv<-seq(0.35,1,length.out=4)
 	cutcv<-cut(grid$cv,breaks=brcv)
 	grid$cutcv<-cutcv
 	grid$cex<-cexcv[as.numeric(cutcv)]*mag
 	
+	### BUILD GRID WITH HOLES
 	holes<-gBuffer(SpatialPoints(coordinates(grid),proj4string=CRS(proj4string(grid))),width=ifelse(is.na(grid$cex),0,grid$cex*40000),byid=TRUE) # the buffer width value needs to be adjusted manually with the cex of the legend
 	gholes<-gIntersection(gDifference(grid,holes),grid,byid=TRUE)
-	#plot(gholes,add=TRUE,col="blue")
+
 	
 	### PLOT
 	par(mar=c(0,0,0,0),mgp=c(0.5,0.1,0))
@@ -582,7 +573,7 @@ for(i in seq_along(lgroup)){
 	### plot bathymetry shading
 	lb<-c(75,72,69,66,63,60,57,54)-5 #c(70,65,60,55,50,45,42,39)
 	plot(b0,col=hcl(240,50,lb[1]),border=NA,add=TRUE)
-	plbot(b200,col=hcl(240,50,lb[2]),border=NA,add=TRUE)
+	plot(b200,col=hcl(240,50,lb[2]),border=NA,add=TRUE)
 	plot(b1000,col=hcl(240,50,lb[3]),border=NA,add=TRUE)
 	plot(b2000,col=hcl(240,50,lb[4]),border=NA,add=TRUE)
 	plot(b3000,col=hcl(240,50,lb[5]),border=NA,add=TRUE)
@@ -667,101 +658,60 @@ for(i in seq_along(lgroup)){
 	plot(lat[olat],add=TRUE,col="grey30",pch=16,cex=0.01)
 	plot(lon[olon],add=TRUE,col="grey30",pch=16,cex=0.01)
 	
-	### LEGEND DENSITY
-	if(is.null(br)){
-		se<-seq(r[1],r[2],length.out=7)
-		lcols<-rev(alpha(tail(colo.scale(c(grid$val,se),cols=rev(cols),breaks=br),length(se)),trans))
-	}else{
-		se<-paste(format(round(br[-length(br)],1),nsmall=1,digits=0),format(round(br[-1],1),nsmall=1,digits=0),sep=" - ")
-		lcols<-alpha(cols,trans)
-	}
+	### PLOT DENSITY LEGEND
+	se<-paste(format(round(br[-length(br)],1),nsmall=1,digits=0),format(round(br[-1],1),nsmall=1,digits=0),sep=" - ")
+	lcols<-alpha(cols,trans)
 	deleg<-c("0",paste0(c(">",rep("",length(se)-1)),if(is.numeric(se)){round(se,0)}else{se}))
 	deleg<-paste(deleg,c("/ not visited (  )",rep("",length(deleg)-1)))
 	l<-legend(2500000,1100000,adj=c(0,0.5),title.adj=0,legend=rep("",length(deleg)),y.intersp=1.2,bty="n",title="Density (birds / km\U00B2)\nDensité (oiseaux / km\U00B2)",cex=tex*1)
-	
-	### add hexagonal density markers
 	for(j in seq_along(l$text$x)){
-		X<-l$text$x[j]
-		Y<-l$text$y[j]
-		shift<-c(X-coordinates(hex)[1,1],Y-coordinates(hex)[1,2])-c(400000,-7000)
-		col<-c(NA,lcols)[j]
-		bord<-c("lightblue",rep(NA,length(lcols)))[j]
-		e<-elide(hex,shift=shift,rotate=0) ###!!!!!!!!!!!! la valeur du rotate doit être ajustée à la mitaine en fonction de la cellule choisie hex
-		plot(e,col=col,add=TRUE,border=bord,lwd=0.5)
-		text(coordinates(e)[,1]+100000,coordinates(e)[,2],label=deleg[j],cex=tex*1,adj=c(0,0.5))
-		if(j==1){
-			width<-strwidth(deleg[j],cex=tex*1)
-			points(coordinates(e)[,1]+100000+width-56000,coordinates(e)[,2]-7000,pch=4,cex=0.35,col="lightblue") 
-		}
+		 X<-l$text$x[j]
+		 Y<-l$text$y[j]
+		 shift<-c(X-coordinates(hex)[1,1],Y-coordinates(hex)[1,2])-c(400000,-7000)
+		 col<-c(NA,lcols)[j]
+		 bord<-c("lightblue",rep(NA,length(lcols)))[j]
+		 e<-elide(hex,shift=shift,rotate=0) #la valeur de rotate doit être ajustée à la mitaine en fonction de la cellule choisie hex
+		 plot(e,col=col,add=TRUE,border=bord,lwd=0.5)
+		 text(coordinates(e)[,1]+100000,coordinates(e)[,2],label=deleg[j],cex=tex*1,adj=c(0,0.5))
+		 if(j==1){
+			  width<-strwidth(deleg[j],cex=tex*1)
+			  points(coordinates(e)[,1]+100000+width-56000,coordinates(e)[,2]-7000,pch=4,cex=0.35,col="lightblue") 
+		 }
 	}
 	sca<-bbox(e) # needed for scale position
 	
 	
-	### CV 
-	### LEGEND CV
-	#####points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=mag*(grid$cv/max(grid$cv,na.rm=TRUE)),col="white")
-	#points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=grid$cex,col="#7AAFD1")
-	##points(coordinates(grid)[,1],coordinates(grid)[,2],pch=1,cex=mag*(grid$cv/max(grid$cv,na.rm=TRUE)),col=alpha("green",0.8))
-	#####points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=mag*(grid$cv/max(grid$cv,na.rm=TRUE)),col=alpha("black",0.5))
-	#####se<-c(25,50,100,200,300)
-	#legend(2240000,-200000,pch=1,col="lightblue",pt.cex=1.2*mag*(se/max(grid$cv,na.rm=TRUE)),y.intersp=0.75,legend=paste0(c(rep("",length(se)-1),">"),round(se,0)),bty="n",title="CV (%)",cex=tex*1.3)
-	
-	# ideally, we should use the next lowest CV as the lower bound because the lowest corresponds to nbsamp = 1 and it is not displayed
-	
+	### PLOT CV LEGEND
 	cvleg<-strsplit(gsub("\\)|\\(|\\]|\\[","",gsub(","," - ",levels(cutcv)))," - ")
 	cvleg<-c("N/A (n = 1)",sapply(cvleg,function(k){paste(gsub(" ","",k),collapse=" - ")}))
 	l<-legend(2500000,-110000,adj=c(1,0.5),title.adj=0,y.intersp=1.2,legend=rep("",length(cvleg)),bty="n",title="Coefficient of variation (%)\nCoefficient de variation (%)",cex=tex*1)
-	
 	for(j in seq_along(l$text$x)){
-		#X<-l$text$x[j]
-		Y<-l$text$y[j]
-		shift<-c(X-coordinates(hex)[1,1],Y-coordinates(hex)[1,2])-c(400000,-7000)
-		bord<-c("lightblue",rep(NA,length(lcols)))[j]
-		width<-c(0.001,cexcv)[j]*40000 # on ajoute une explication et un "fake" buffer de 0.001 pour illustrer l'absence de trous et sa signification
-		hhex<-gBuffer(SpatialPoints(coordinates(hex),proj4string=CRS(proj4string(grid))),width=width,byid=TRUE) # the buffer width value needs to be adjusted manually with the cex of the legend
-		hexholes<-gIntersection(gDifference(hex,hhex),hex,byid=TRUE)
-		e<-elide(hexholes,shift=shift,rotate=0)
-		plot(e,col=alpha("white",trans),add=TRUE,border=NA,lwd=1)
-		text(coordinates(e)[,1]+100000,coordinates(e)[,2],label=cvleg[j],cex=tex*1,adj=c(0,0.5))
+		 Y<-l$text$y[j]
+		 shift<-c(X-coordinates(hex)[1,1],Y-coordinates(hex)[1,2])-c(400000,-7000)
+		 bord<-c("lightblue",rep(NA,length(lcols)))[j]
+		 width<-c(0.001,cexcv)[j]*40000 # on ajoute une explication et un "fake" buffer de 0.001 pour illustrer l'absence de trous et sa signification
+		 hhex<-gBuffer(SpatialPoints(coordinates(hex),proj4string=CRS(proj4string(grid))),width=width,byid=TRUE) # the buffer width value needs to be adjusted manually with the cex of the legend
+		 hexholes<-gIntersection(gDifference(hex,hhex),hex,byid=TRUE)
+		 e<-elide(hexholes,shift=shift,rotate=0)
+		 plot(e,col=alpha("white",trans),add=TRUE,border=NA,lwd=1)
+		 text(coordinates(e)[,1]+100000,coordinates(e)[,2],label=cvleg[j],cex=tex*1,adj=c(0,0.5))
 	}
 	
 	
-	### SAMPLE SIZE
-	#text(coordinates(grid)[k,1],coordinates(grid)[k,2],grid$nbsamp[k],cex=tex*0.3,col=alpha("black",0.25))
-	
-	### LOWER CI
-	#points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=mag,col=alpha("#7AAFD1",ifelse(is.na(grid$coll),0,1)))
-	#points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=mag,col=grid$coll)
-	
-	### UPPER CI
-	#points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=mag*0.4,col=alpha("#7AAFD1",ifelse(is.na(grid$colu),0,1)))
-	#points(coordinates(grid)[,1],coordinates(grid)[,2],pch=16,cex=mag*0.4,col=grid$colu)
-	
-	##text(coordinates(grid)[,1],coordinates(grid)[,2],grid$count,cex=0.2,col=alpha("black",0.3))
-	###text(coordinates(grid)[,1],coordinates(grid)[,2],grid$id,cex=0.2,col=alpha("black",0.3))
-	
-
+ ### GET THE DIFFERENT NAMES
 	gg<-unlist(strsplit(group,"\\."))
 	if(nchar(gg[1])==4){
-		sp<-d$English[match(gg[1],d$Alpha)]
+		span<-d$English[match(gg[1],d$Alpha)]
 		splat<-as.character(d$Latin[match(gg[1],d$Alpha)])
 		spfr<-d$French[match(gg[1],d$Alpha)]
 	}else{
-		sp<-gg[1]
+		span<-unname(groupn[[match(gg[1],names(groupn))]][1])
 		splat<-"  "
-		spfr<-unname(groupn[[match(sp,names(groupn))]][2])
-		a<-nbobs$Alpha[nbobs$group_atlas%in%sp]
-		a<-a[a!=""]
-		a<-d$English[match(a,d$Alpha)]
-		a<-spname$Scientific_Name[match(a,spname$English)]
-		a<-a[!is.na(a)]
-		a<-sort(unique(sapply(strsplit(a," "),function(k){k[1]})))
-		a<-paste0("(",paste(a,collapse=","),")  ")
-		#splat<-a
+		spfr<-unname(groupn[[match(gg[1],names(groupn))]][2])
 	}
 	mmonth<-match(strsplit(group,"\\.")[[1]][2],month_comb)
 	
-	text(1600000,2940000,sp,font=2,adj=c(0,0.5),cex=tex*1.4)
+	text(1600000,2940000,span,font=2,adj=c(0,0.5),cex=tex*1.4)
 	text(1600000,2790000,spfr,font=2,adj=c(0,0.5),cex=tex*1.4)
 	text(3600000,2940000,unlist(strsplit(splat," "))[[1]],font=3,adj=c(1,0.5),cex=tex*1.1)
 	text(3600000,2790000,unlist(strsplit(splat," "))[[2]],font=3,adj=c(1,0.5),cex=tex*1.1)
@@ -775,8 +725,8 @@ for(i in seq_along(lgroup)){
 	wmonthFR<-c("Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc")
 	nmonth<-1:12
 	se<-seq(1600000,3500000,length.out=12)
-	text(se,2630000,wmonthEN,col=ifelse(nmonth%in%monthNB[[mmonth]],"red","grey55"),font=ifelse(nmonth%in%monthNB[[mmonth]],2,1),cex=0.35,adj=c(0,0.5))
-	text(se,2580000,wmonthFR,col=ifelse(nmonth%in%monthNB[[mmonth]],"red","grey55"),font=ifelse(nmonth%in%monthNB[[mmonth]],2,1),cex=0.35,adj=c(0,0.5))
+	text(se,2630000,wmonthEN,col=ifelse(nmonth%in%monthNB[[mmonth]],cols[length(cols)],"grey55"),font=ifelse(nmonth%in%monthNB[[mmonth]],2,1),cex=0.35,adj=c(0,0.5))
+	text(se,2580000,wmonthFR,col=ifelse(nmonth%in%monthNB[[mmonth]],cols[length(cols)],"grey55"),font=ifelse(nmonth%in%monthNB[[mmonth]],2,1),cex=0.35,adj=c(0,0.5))
 	
 	
 	### barplot
