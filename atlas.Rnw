@@ -158,31 +158,26 @@
 	
 	#sg<-read.csv("C:/Users/User/Documents/NestingPhenologySCF/new/Species_grouping2.csv",header=T,stringsAsFactors=F)
 	
-	load("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/final_maps.RData")
+	load("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/ECSASmaps.RData") #RData to save at the end of the map script
 
 @	
 
 
 <<region_atlantic, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE>>=
 	
-	
-reg<-readOGR("C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ATLBioregions",verbose=FALSE)
 par(mar=c(1,1,1,1))
-plot(reg)
+plot(reg_atl)
 box()
 	
 @
 
 
 \clearpage	
-<<nbobs, echo=FALSE, include=FALSE, eval=FALSE, message=FALSE, warning=FALSE, results="asis">>=
+<<nbobs, echo=FALSE, include=TRUE, eval=TRUE, message=FALSE, warning=FALSE, results="asis">>=
 	
-	
-	cap<-"Number of observations per group and per season."
-	res<-ddply(d,.(Group,MonthC),nrow)
-	res<-res[res$Group!="",]
-	tab<-xtable(res,caption=cap)
-	print(tab,include.rownames=FALSE,caption.placement="top")
+cap<-"Number of observations per group and per season."
+tab<-xtable(nbobs,caption=cap)
+print(tab,include.rownames=FALSE,caption.placement="top")
 	
 @
 
@@ -191,41 +186,41 @@ box()
 	
 	
 	cap<-""
-	n<-1:3
+	n<-seq_along(reg_atl) #temp car ça ne run pas
 	ds<-SpatialPoints(cbind(d$LongStart,d$LatStart),CRS(ll))
-	ds<-spTransform(ds,CRS(proj4string(reg)))
+	ds<-spTransform(ds,CRS(proj4string(reg_atl)))
 	
 	for(i in n){
 	
-	  o<-over(ds,reg[n[i],])
+	  o<-over(ds,reg_atl[n[i],])
 	
 	  x<-as.data.table(d[!is.na(o[,1]),])
 	  y<-unique(x[,.(Month,SMP_LABEL,SMP_EFFORT)])
 	  y<-y[,.(month_effort=sum(SMP_EFFORT)),by=.(Month)]
 	  x$month_effort<-y$month_effort[match(x$Month,y$Month)]
-	  x<-x[,.(dens=(sum(Count,na.rm=TRUE)/unique(month_effort))),by=.(Group,Month)]
+	  x<-x[,.(dens=(sum(as.numeric(Count),na.rm=TRUE)/unique(month_effort))),by=.(group_atlas,Month)]
 	
    res<-x
 
-   res<-merge(expand.grid(Group=unique(res$Group),Month=unique(res$Month),stringsAsFactors=FALSE),res,all.x=TRUE)
+   res<-merge(expand.grid(group_atlas=unique(res$group_atlas),Month=unique(res$Month),stringsAsFactors=FALSE),res,all.x=TRUE)
    r<-range(as.numeric(res$Month))
    res$Month<-factor(res$Month,levels=formatC(seq(r[1],r[2],by=1),width=2,flag=0))
    res$dens<-ifelse(is.na(res$dens),0,res$dens)
-   res<-res[order(res$Group,res$Month),]
-   res<-res[res$Group!="",]
+   res<-res[order(res$group_atlas,res$Month),]
+   res<-res[res$group_atlas!="",]
  
    f<-function(x){log(x+0.001)}
    #f<-function(x){x}
    
-   g<-unique(res$Group)
+   g<-unique(res$group_atlas)
    options(scipen=20)
    par(mar=c(4,5,5,1))
    plot(as.numeric(res$Month),f(res$dens),type="n",xaxt="n",yaxt="n",las=2,xlab="",ylab="")
    
-   subplot({plot(reg,col=ifelse(is.na(match(n,n[i])),NA,"grey85"),border="grey85",lwd=1)},pars=list(mar=c(0,0,0,0)),x=par("usr")[1:2],y=par("usr")[3:4],hadj=0,vadj=0,inset=c(0.1,0.1),size=c(2,2))
+   subplot({plot(reg_atl,col=ifelse(is.na(match(n,n[i])),NA,"grey85"),border="grey85",lwd=1)},pars=list(mar=c(0,0,0,0)),x=par("usr")[1:2],y=par("usr")[3:4],hadj=0,vadj=0,inset=c(0.1,0.1),size=c(2,2))
    
    invisible(sapply(seq_along(g),function(k){
-     x<-res[res$Group==g[k],]
+     x<-res[res$group_atlas==g[k],]
    	 lines(f(x$dens),col=alpha(brewer.pal(length(g),"Paired"),0.5)[k],lwd=5)
    }))
    axis(1,at=seq_along(levels(res$Month)),label=levels(res$Month))
