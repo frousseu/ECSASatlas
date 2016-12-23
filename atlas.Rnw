@@ -31,7 +31,7 @@
 \usepackage[toc]{multitoc}
 \renewcommand*{\multicolumntoc}{2}
 \setlength{\columnseprule}{0.25pt}
-\renewcommand{\contentsname}{\LARGE SPECIES ACCOUNTS}
+\renewcommand{\contentsname}{\LARGE ECSAS Atlas}
 
 %\pagestyle{headings}
 \usepackage{fancyhdr}
@@ -109,8 +109,6 @@
 	
 	\subsection{Data summary}
 	
-	\subsection{Seasonal abundance}
-	
 	\section{Methods and Results}
 	
 	\subsection{Model ouputs}
@@ -166,22 +164,23 @@
 <<region_atlantic, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE>>=
 	
 par(mar=c(1,1,1,1))
-plot(reg_atl)
+plot(reg_atl,main="Regions")
 box()
 	
 @
 
 
 \clearpage	
-<<nbobs, echo=FALSE, include=FALSE, eval=TRUE, message=FALSE, warning=FALSE, results="asis">>=
+<<nbobs, echo=FALSE, include=TRUE, eval=TRUE, message=FALSE, warning=FALSE, results="asis">>=
 	
 cap<-"Number of observations per group and per season."
-tab<-xtable(nbobs,caption=cap)
-print(tab,include.rownames=FALSE,caption.placement="top")
+tab<-xtable(nbobs,caption=cap,digits=0)
+print(tab,include.rownames=FALSE,caption.placement="top",size="\\fontsize{7pt}{7pt}\\selectfont")
 	
 @
 
 \clearpage
+\section{Seasonal Presence}
 <<seasonal_presence, eval=FALSE, include=FALSE, cache=TRUE, echo=FALSE, message=FALSE, warning=FALSE, results="asis">>=
 	
 	
@@ -237,6 +236,7 @@ print(tab,include.rownames=FALSE,caption.placement="top")
 
 
 \clearpage
+\section{Effort}
 <<effort_maps, cache=FALSE, eval=TRUE, include=TRUE, echo=FALSE, message=FALSE, fig.height=4.5,fig.width=6.5, results='asis'>>=
 
 	x<-list.files("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps")
@@ -263,7 +263,7 @@ print(tab,include.rownames=FALSE,caption.placement="top")
 
 
 	\clearpage
-	\section{Species Accounts}
+	\section{Species Maps}
 	<<png, cache=FALSE, eval=TRUE, include=TRUE, echo=FALSE, message=FALSE, fig.height=4.5,fig.width=6.5, results='asis'>>=
 	
 	
