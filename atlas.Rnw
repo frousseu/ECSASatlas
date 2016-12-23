@@ -173,7 +173,7 @@ box()
 \clearpage	
 <<nbobs, echo=FALSE, include=TRUE, eval=TRUE, message=FALSE, warning=FALSE, results="asis">>=
 	
-cap<-"Number of observations per group and per season."
+cap<-"Number of observations per groups and per seasons."
 tab<-xtable(nbobs,caption=cap,digits=0)
 print(tab,include.rownames=FALSE,caption.placement="top",size="\\fontsize{7pt}{7pt}\\selectfont")
 	
