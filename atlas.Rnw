@@ -237,9 +237,9 @@ print(tab,include.rownames=FALSE,caption.placement="top")
 
 
 \clearpage
-<<effort_maps, cache=FALSE, eval=TRUE, include=FALSE, echo=FALSE, message=FALSE, fig.height=4.5,fig.width=6.5, results='asis'>>=
+<<effort_maps, cache=FALSE, eval=TRUE, include=TRUE, echo=FALSE, message=FALSE, fig.height=4.5,fig.width=6.5, results='asis'>>=
 
-		x<-list.files("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps")
+	x<-list.files("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps")
 	x<-x[grep("season",x)]
 	x2<-gsub("\\.|_","",x)
 	
