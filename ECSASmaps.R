@@ -25,6 +25,8 @@ library(tidyr)
 library(RCurl)
 library(jpeg)
 library(png)
+library(data.table)
+library(RColorBrewer)
 #load("C:/Users/User/Documents/SCF2016_FR/yo9.RData")
 
 
@@ -89,6 +91,11 @@ b5000<-spTransform(readOGR(dsn=pathshp,layer="b5000",encoding="UTF-8"),CRS(laea)
 b6000<-spTransform(readOGR(dsn=pathshp,layer="b6000",encoding="UTF-8"),CRS(laea))
 
 
+### GET ATLANTIC REGIONS
+reg_atl<-readOGR("C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ATLBioregions",verbose=FALSE)#
+reg_atl<-spTransform(reg_atl,CRS(laea))
+
+
 
 ### extract QC data that is not in ECSAS yet
 addQC<-SOMEC2ECSAS(input="C:/Users/User/Documents/SCF2016_FR/ECSASdata/SOMEC.accdb",output="C:/Users/User/Documents/SCF2016_FR/ECSASdata/ECSASexport.csv",date="2014-04-01",step="5 min",spNA=FALSE)
@@ -104,7 +111,7 @@ db<-odbcConnectAccess2007("C:/Users/User/Documents/SCF2016_FR/ECSASdata/SOMEC.ac
 qc<-sqlFetch(db,"Code espèces",as.is=TRUE)
 odbcClose(db)
 bn<-c("foba","fubo","fulm","GOAC","goar","guma","LALQ","LIMICOLESP","OCWL","PATC","PLON","RAZO","rien","SCSP")
-gn<-c("FOBA","FUBO","FULM","GOAC","GOAR","GUMA","LALQ","LIMICOLESP","OCWI","PATC","PLON","PEPI","RIEN","SCSP")
+gn<-c("FOBA","FUBO","FUBO","GOAC","GOAR","GUMA","LALQ","LIMICOLESP","OCWI","PATC","PLON","PEPI","RIEN","SCSP")
 m<-match(addQC$Alpha,bn)
 addQC$Alpha<-ifelse(is.na(m),addQC$Alpha,gn[m])
 m<-match(addQC$Alpha,qc$CodeFR)
@@ -123,7 +130,7 @@ addQC$English<-ifelse(!is.na(m),ecsas$English[m],"")
 d<-join(ecsas,addQC,type="full")
 #d$Date<-substr(d$Date,1,10)
 d$Alpha<-ifelse(is.na(d$Alpha) | d$Alpha%in%c("RIEN","NOBI"),"",as.character(d$Alpha))
-d$English<-gsub("Storm Petrel","Storm-Petrels",d$English)
+d$English<-gsub("Storm Petrel","Storm-Petrel",d$English)
 d$English<-ifelse(is.na(d$English),"",as.character(d$English))
 d$French<-spname$French_Name[match(d$English,spname$English_Name)]
 d$Distance<-ifelse(is.na(d$Distance),"",as.character(d$Distance))
@@ -421,7 +428,7 @@ for(i in seq_along(dl)){
 
 #global.summary.distanceList(model=ml,species=NULL,file="temp",directory="C:/Users/rousseuf/Documents")
 
-
+save.image("C:/Users/user/Documents/SCF2016_FR/ECSASatlas/ECSASmaps.RData")
 
 
 ###########################################
@@ -473,14 +480,15 @@ olon<-!is.na(o1) | !is.na(o2)
 
 
 
-#grid2<-spTransform(grid2,CRS(laea))
-#grid<-spTransform(grid,CRS(laea))
-#reg_atl<-readOGR("C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ATLBioregions",verbose=FALSE)
-#reg_atl<-spTransform(reg_atl,CRS(proj4string(grid)))
 
-groupn<-c(Terns="Sternes",Shearwaters="Puffins","Storm-Petrels"="Océanites","Diving Waterfowl"="Canards plongeurs",Phalaropes="Phalaropes",Jaegers="Petits labbes",Skuas="Grands labbes",Alcids="Alcidés",Gulls="Goélands et mouettes",Murres="Marmettes (Genre Uria)")
+#############################
+#############################
+#############################
 
-hex<-grid[1,]
+groupn<-list(Terns=c("All Terns","Sternes"),Shearwaters=c("All Shearwaters (without fulmars)","Puffins"),"Storm-Petrels"=c("All Storm-Petrels","Océanites"),"Diving Waterfowl"=c("Diving Waterfowl","Canards plongeurs"),Phalaropes=c("All Phalaropes","Phalaropes"),Jaegers=c("All Jaegers","Petits labbes"),Skuas=c("All Skuas","Grands labbes"),Alcids=c("All Alcids","Alcidés"),Gulls=c("All Gulls","Goélands et mouettes"),Murres=c("All Murres","Marmettes (genre Uria)"))
+
+
+hex<-grid[1,] #this will be used for the legend
 row.names(hex@data)<-sapply(slot(hex,"polygons"),function(x){slot(x,"ID")})
 
 cols<-rev(c("darkred",colo.scale(seq(0,1,length.out=3),c("red","white"))))
@@ -492,7 +500,7 @@ ma<-50*ceiling(ma/50)
 brcv<-c(0,25,50,100,ma)#CV scale
 monthNB<-list(c(12,1:3),4:7,8:11)
 lgroup<-names(ml)
-lgroup<-c("NOFU.08091011")
+lgroup<-c("Alcids.08091011","Gulls.08091011")
 ldens<-vector(mode="list",length(lgroup))
 names(ldens)<-lgroup
 i<-1
@@ -500,10 +508,6 @@ i<-1
 for(i in seq_along(lgroup)){
 	
 	group<-lgroup[i]
-	
-	if(class(ml[[group]])=="character"){ # this is for models that do not run
-		next
-	}
 	
 	png(paste0("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps/",gsub("\\.","_",group),".png"),width=6,height=4.8,units="in",res=600)
 	
@@ -576,17 +580,17 @@ for(i in seq_along(lgroup)){
 	
 
 	### plot bathymetry shading
-	l<-c(75,72,69,66,63,60,57,54)-5 #c(70,65,60,55,50,45,42,39)
-	plot(b0,col=hcl(240,50,l[1]),border=NA,add=TRUE)
-	plot(b200,col=hcl(240,50,l[2]),border=NA,add=TRUE)
-	plot(b1000,col=hcl(240,50,l[3]),border=NA,add=TRUE)
-	plot(b2000,col=hcl(240,50,l[4]),border=NA,add=TRUE)
-	plot(b3000,col=hcl(240,50,l[5]),border=NA,add=TRUE)
-	plot(b4000,col=hcl(240,50,l[6]),border=NA,add=TRUE)
-	plot(b5000,col=hcl(240,50,l[7]),border=NA,add=TRUE)
-	plot(b6000,col=hcl(240,50,l[8]),border=NA,add=TRUE)
-	pb<-hcl(240,50,l[1])
-	db<-hcl(240,50,l[7])
+	lb<-c(75,72,69,66,63,60,57,54)-5 #c(70,65,60,55,50,45,42,39)
+	plot(b0,col=hcl(240,50,lb[1]),border=NA,add=TRUE)
+	plbot(b200,col=hcl(240,50,lb[2]),border=NA,add=TRUE)
+	plot(b1000,col=hcl(240,50,lb[3]),border=NA,add=TRUE)
+	plot(b2000,col=hcl(240,50,lb[4]),border=NA,add=TRUE)
+	plot(b3000,col=hcl(240,50,lb[5]),border=NA,add=TRUE)
+	plot(b4000,col=hcl(240,50,lb[6]),border=NA,add=TRUE)
+	plot(b5000,col=hcl(240,50,lb[7]),border=NA,add=TRUE)
+	plot(b6000,col=hcl(240,50,lb[8]),border=NA,add=TRUE)
+	pb<-hcl(240,50,lb[1])
+	db<-hcl(240,50,lb[7])
 	
 	
 	### draw latitudes and longitudes
@@ -649,7 +653,7 @@ for(i in seq_along(lgroup)){
 	plot(b6000,border=alpha("black",0.2),add=TRUE,lwd=0.5)
 	
 	### SPECIES INFO BOX
-	rect(1100000,1560000,3800000,3100000,col=alpha("white",0.4),border=NA) #2260000
+	rect(1100000,1560000,3800000,3100000,col=alpha("white",0.4),border=NA)
 	rect(1100000,2680000,3800000,3100000,col=alpha("white",0.25),border=NA)
 	rect(1100000,2240000,3800000,2520000,col=alpha("white",0.25),border=NA)
 	rect(2450000,-1000000,3650000,1225000,col=alpha("white",0.4),border=NA)
@@ -673,7 +677,7 @@ for(i in seq_along(lgroup)){
 	}
 	deleg<-c("0",paste0(c(">",rep("",length(se)-1)),if(is.numeric(se)){round(se,0)}else{se}))
 	deleg<-paste(deleg,c("/ not visited (  )",rep("",length(deleg)-1)))
-	l<-legend(2500000,1100000,adj=c(0,0.5),title.adj=0,legend=rep("",length(deleg)),y.intersp=1.2,bty="n",title="Density (Birds / km\U00B2)\nDensité (Oiseaux / km\U00B2)",cex=tex*1)
+	l<-legend(2500000,1100000,adj=c(0,0.5),title.adj=0,legend=rep("",length(deleg)),y.intersp=1.2,bty="n",title="Density (birds / km\U00B2)\nDensité (oiseaux / km\U00B2)",cex=tex*1)
 	
 	### add hexagonal density markers
 	for(j in seq_along(l$text$x)){
@@ -736,6 +740,7 @@ for(i in seq_along(lgroup)){
 	##text(coordinates(grid)[,1],coordinates(grid)[,2],grid$count,cex=0.2,col=alpha("black",0.3))
 	###text(coordinates(grid)[,1],coordinates(grid)[,2],grid$id,cex=0.2,col=alpha("black",0.3))
 	
+
 	gg<-unlist(strsplit(group,"\\."))
 	if(nchar(gg[1])==4){
 		sp<-d$English[match(gg[1],d$Alpha)]
@@ -744,7 +749,15 @@ for(i in seq_along(lgroup)){
 	}else{
 		sp<-gg[1]
 		splat<-"  "
-		spfr<-unname(groupn[match(sp,names(groupn))])
+		spfr<-unname(groupn[[match(sp,names(groupn))]][2])
+		a<-nbobs$Alpha[nbobs$group_atlas%in%sp]
+		a<-a[a!=""]
+		a<-d$English[match(a,d$Alpha)]
+		a<-spname$Scientific_Name[match(a,spname$English)]
+		a<-a[!is.na(a)]
+		a<-sort(unique(sapply(strsplit(a," "),function(k){k[1]})))
+		a<-paste0("(",paste(a,collapse=","),")  ")
+		#splat<-a
 	}
 	mmonth<-match(strsplit(group,"\\.")[[1]][2],month_comb)
 	
@@ -796,11 +809,11 @@ for(i in seq_along(lgroup)){
 	subplot({barplot(tab,las=2,cex.names=0.3,cex.lab=0.3,cex.axis=0.3,yaxt="n",border=NA,ylab="",col=db);
 		axis(2,cex.axis=0.3,cex.lab=0.3,tcl=-0.1,lwd=0.1,las=2,col.axis=db);
 		par(new=TRUE);
-		barplot(temp$V1/temp$eff,las=2,cex.names=0.3,cex.lab=0.3,yaxt="n",cex.axis=0.3,border=NA,col=cols[length(cols)-1]);
-		axis(4,cex.axis=0.3,cex.lab=0.3,tcl=-0.1,lwd=0.1,las=2,col.axis=cols[length(cols)-1]);
+		barplot(temp$V1/temp$eff,las=2,cex.names=0.3,cex.lab=0.3,yaxt="n",cex.axis=0.3,border=NA,col=cols[length(cols)]);
+		axis(4,cex.axis=0.3,cex.lab=0.3,tcl=-0.1,lwd=0.1,las=2,col.axis=cols[length(cols)]);
 		mtext("Effort (km)",side=2,cex=0.3,line=0.6);
 		mtext("Birds / km\nOiseaux / km",side=4,cex=0.3,line=0.5);
-		mtext("Daily effort (km) and raw linear bird densities\nEffort journalier (km) et densités linéaires brutes d'oiseaux",side=1,cex=0.35,line=0.7)}
+		mtext("Daily Effort (km) and Raw Linear Bird Densities\nEffort journalier (km) et densités linéaires brutes d'oiseaux",side=1,cex=0.35,line=0.7)}
 		,x=c(1600000, 3350000),y=c(1860000, 2160000)) #c(-1125000, -750000)
 	
 	
@@ -866,32 +879,33 @@ for(i in seq_along(lgroup)){
 	
 }
 
+
+
 ###########################################
 ### CALCULATE EFFORT
 ###########################################
 
+ss<-unique(d[,c("cell","MonthC","SMP_LABEL","SMP_EFFORT")])
 
-s<-unique(d[,c("cell","MonthC","SMP_LABEL","SMP_EFFORT")])
-
-s<-ddply(s,.(cell,MonthC),function(i){
+ss<-ddply(ss,.(cell,MonthC),function(i){
 	effort<-sum(i$SMP_EFFORT)
 	nbdays<-nrow(i)
 	data.frame(cell=i$cell[1],MonthC=i$MonthC[1],effort,nbdays)
 })
 
-eg<-expand.grid(cell=unique(grid$id),MonthC=unique(s$MonthC))
-s<-left_join(eg,s)
-s$effort<-ifelse(is.na(s$effort),0,s$effort)
-s$nbdays<-ifelse(is.na(s$nbdays),0,s$nbdays)
+eg<-expand.grid(cell=unique(grid$id),MonthC=unique(ss$MonthC))
+ss<-left_join(eg,ss)
+ss$effort<-ifelse(is.na(ss$effort),0,ss$effort)
+ss$nbdays<-ifelse(is.na(ss$nbdays),0,ss$nbdays)
 
 #windows()
 #par(mar=c(0,0,0,0),mfrow=c(2,2))
 
-for(i in seq_along(month_comb)[1:2]){
+for(i in seq_along(month_comb)){
 	
-	png(paste0("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps/",paste0("season",month_comb[i]),".png"),width=6,height=4.8,units="in",res=500)
+	png(paste0("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps/",paste0("season_",month_comb[i]),".png"),width=6,height=4.8,units="in",res=500)
 	
-	x<-s[s$MonthC==month_comb[i],]
+	x<-ss[ss$MonthC==month_comb[i],]
 	
 	m<-match(grid$id,x$cell)
 	grid$effort<-x$effort[m]
@@ -900,26 +914,44 @@ for(i in seq_along(month_comb)[1:2]){
 	n<-6
 	cols<-rev(colo.scale(seq(0,1,length.out=n),c("darkred","red","tomato3","yellow","white")))
 	br<-suppressWarnings(classIntervals(unique(c(grid$effort)), n=length(cols), style = "kmeans", rtimes = 1)$brks)
-	#br<-NULL
 	
 	grid$col<-colo.scale(grid$effort,cols=cols,breaks=br)
-
- ### PLOT
+	
+	### PLOT
 	par(mar=c(0,0,0,0),mgp=c(0.5,0.1,0))
-	plot(grid,col="white",border="white")
-
-	plot(b0,col=hcl(240,50,l[1]),border=NA,add=TRUE)
-	plot(b200,col=hcl(240,50,l[2]),border=NA,add=TRUE)
-	plot(b1000,col=hcl(240,50,l[3]),border=NA,add=TRUE)
-	plot(b2000,col=hcl(240,50,l[4]),border=NA,add=TRUE)
-	plot(b3000,col=hcl(240,50,l[5]),border=NA,add=TRUE)
-	plot(b4000,col=hcl(240,50,l[6]),border=NA,add=TRUE)
-	plot(b5000,col=hcl(240,50,l[7]),border=NA,add=TRUE)
-	plot(b6000,col=hcl(240,50,l[8]),border=NA,add=TRUE)
+	plot(1,1,type="n",xaxs="i",yaxs="i",xlim=c(-1848241,3712932),ylim=c(-1413652,3035287))
+	boxcut<-par("usr")
 	
-	plot(grid,col=grid$col,border=ifelse(grid$effort<0.001,"lightblue",NA),lwd=0.5,add=TRUE)
+	### plot bathymetry shading
+	lb<-c(75,72,69,66,63,60,57,54)-5 #c(70,65,60,55,50,45,42,39)
+	plot(b0,col=hcl(240,50,lb[1]),border=NA,add=TRUE)
+	plot(b200,col=hcl(240,50,lb[2]),border=NA,add=TRUE)
+	plot(b1000,col=hcl(240,50,lb[3]),border=NA,add=TRUE)
+	plot(b2000,col=hcl(240,50,lb[4]),border=NA,add=TRUE)
+	plot(b3000,col=hcl(240,50,lb[5]),border=NA,add=TRUE)
+	plot(b4000,col=hcl(240,50,lb[6]),border=NA,add=TRUE)
+	plot(b5000,col=hcl(240,50,lb[7]),border=NA,add=TRUE)
+	plot(b6000,col=hcl(240,50,lb[8]),border=NA,add=TRUE)
+	pb<-hcl(240,50,lb[1])
+	db<-hcl(240,50,lb[7])
 	
-	### bathymetry lines
+	### draw latitudes and longitudes
+	plot(lat,add=TRUE,col="grey20",pch=16,cex=0.01)
+	plot(lon,add=TRUE,col="grey20",pch=16,cex=0.01)
+	
+	
+	### plot grid and values
+	plot(eu,add=TRUE,lwd=0.1,border=NA,col="grey75")
+	plot(na,add=TRUE,lwd=0.1,border=NA,col="grey75")
+	
+	plot(grid,col=alpha(grid$col,trans),border=ifelse(grid$effort<0.001,"lightblue",NA),lwd=0.5,add=TRUE)
+	
+	### plot shapefiles
+	plot(eu,add=TRUE,lwd=0.5,border="grey55",col=alpha("grey75",0.65))
+	plot(na,add=TRUE,lwd=0.5,border="grey55",col=alpha("grey75",0.65))
+	plot(gl,col=pb,lwd=0.5,border="grey55",add=TRUE)
+	
+	### plot bathymetry lines to go over cells
 	plot(gUnionCascaded(b200),border=alpha("black",0.2),add=TRUE,lwd=0.5)
 	plot(gUnionCascaded(b1000),border=alpha("black",0.2),add=TRUE,lwd=0.5)
 	plot(b2000,border=alpha("black",0.2),add=TRUE,lwd=0.5)
@@ -928,45 +960,128 @@ for(i in seq_along(month_comb)[1:2]){
 	plot(b5000,border=alpha("black",0.2),add=TRUE,lwd=0.5)
 	plot(b6000,border=alpha("black",0.2),add=TRUE,lwd=0.5)
 	
-	### draw latitudes
-	plot(lat,add=TRUE,col="grey20",pch=16,cex=0.01)
-
-	### plot grid and values
-	plot(eu,add=TRUE,lwd=0.1,border=NA,col="grey75")
-	plot(na,add=TRUE,lwd=0.1,border=NA,col="grey75")
-	
-	### plot shapefiles
-	plot(eu,add=TRUE,lwd=0.1,border=NA,col=alpha("grey75",0.85))
-	plot(na,add=TRUE,lwd=0.1,border=NA,col=alpha("grey75",0.85))
-	
-	plot(eu,add=TRUE,lwd=0.5,border="grey55")
-	plot(na,add=TRUE,lwd=0.5,border="grey55")
-	
 	### SPECIES INFO BOX
-	rect(1100000,2600000,3800000,3100000,col=alpha("white",0.4),border=NA)
+	rect(1100000,1840000,3800000,3100000,col=alpha("white",0.4),border=NA) #2260000
+	rect(1100000,2680000,3800000,3100000,col=alpha("white",0.25),border=NA)
+	rect(1100000,1840000,3800000,2520000,col=alpha("white",0.25),border=NA)
+	rect(2750000,-660000,3550000,625000,col=alpha("white",0.4),border=NA)
 	
-	plot(eu[eu$ADMIN=="Greenland",],add=TRUE,lwd=0.1,border="grey55",col="grey75")
+	### add this to keep lines in the east of greenland, but not overwrite cells in the west
+	hide<-gIntersection(gr,bbox2pol(c(1100000,3800000,1560000,3100000),proj4string=laea)) # plot over the topright box to hide it but not hide cells in the west of greenland
+	plot(hide,add=TRUE,border=NA,col="grey75")
+	plot(gr,add=TRUE,lwd=0.5,border="grey55")
 	
-	plot(lat[!is.na(o1) | !o2],add=TRUE,col="grey30",pch=16,cex=0.01)
+	### replot lat and lon over land to make them darker on land
+	plot(lat[olat],add=TRUE,col="grey30",pch=16,cex=0.01)
+	plot(lon[olon],add=TRUE,col="grey30",pch=16,cex=0.01)
 	
-	se<-paste(round(br[-length(br)],0),round(br[-1],0),sep=" - ")
-	lcols<-alpha(cols,trans)
-	legend("bottomright",legend=se,pt.bg=lcols,y.intersp=1,bty="n",title="Effort (km)" ,border="lightblue",cex=tex*1,pt.cex=tex*2.5,pt.lwd=0.5,pch=22,col="lightblue")
+	### LEGEND DENSITY
+	if(is.null(br)){
+		se<-seq(r[1],r[2],length.out=7)
+		lcols<-rev(alpha(tail(colo.scale(c(grid$val,se),cols=rev(cols),breaks=br),length(se)),trans))
+	}else{
+		se<-paste(format(br[-length(br)],nsmall=0,digits=0),format(br[-1],nsmall=0,digits=0),sep=" - ")
+		lcols<-alpha(cols,trans)
+	}
+	deleg<-c("0",paste0(c(">",rep("",length(se)-1)),if(is.numeric(se)){round(se,0)}else{se}))
+	deleg<-paste(deleg,rep("",length(deleg)-1))
+	l<-legend(3000000,600000,adj=c(0,0.5),title.adj=-1,legend=rep("",length(deleg)),y.intersp=1.2,bty="n",title="Effort (km)",cex=tex*1)
 	
-	### LATITUDES numbers
-	text(xxlat,yylat[-1],paste0(selat[-1],"°N"),xpd=TRUE,cex=tex*0.5,adj=c(-0.35,-1))
+	### add hexagonal density markers
+	for(j in seq_along(l$text$x)){
+		X<-l$text$x[j]
+		Y<-l$text$y[j]
+		shift<-c(X-coordinates(hex)[1,1],Y-coordinates(hex)[1,2])-c(400000,-7000)
+		col<-c(NA,lcols)[j]
+		bord<-c("lightblue",rep(NA,length(lcols)))[j]
+		e<-elide(hex,shift=shift,rotate=0) ###!!!!!!!!!!!! la valeur du rotate doit être ajustée à la mitaine en fonction de la cellule choisie hex
+		plot(e,col=col,add=TRUE,border=bord,lwd=0.5)
+		text(coordinates(e)[,1]+100000,coordinates(e)[,2],label=deleg[j],cex=tex*1,adj=c(0,0.5))
+	}
+	sca<-bbox(e) # needed for scale position
 	
+	text(1600000,2940000,"Seasonal Effort",font=2,adj=c(0,0.5),cex=tex*1.4)
+	text(1600000,2790000,"Effort saisonnier",font=2,adj=c(0,0.5),cex=tex*1.4)
 	
 	mmonth<-match(month_comb[i],month_comb)
+	wmonthEN<-c("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")
+	wmonthFR<-c("Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc")
+	nmonth<-1:12
+	se<-seq(1600000,3500000,length.out=12)
+	text(se,2630000,wmonthEN,col=ifelse(nmonth%in%monthNB[[mmonth]],cols[length(cols)],"grey55"),font=ifelse(nmonth%in%monthNB[[mmonth]],2,1),cex=0.35,adj=c(0,0.5))
+	text(se,2580000,wmonthFR,col=ifelse(nmonth%in%monthNB[[mmonth]],cols[length(cols)],"grey55"),font=ifelse(nmonth%in%monthNB[[mmonth]],2,1),cex=0.35,adj=c(0,0.5))
 	
-	text(1600000,2900000,"Effort in km",font=2,adj=c(0,0.5),cex=tex*1.4)
-	text(1600000,2720000,paste0(monthEN[mmonth],"\n",monthFR[mmonth]),adj=c(0,0.5),cex=tex)
+	
+	### barplot
+	s<-unique(d[d$MonthC==month_comb[i],c("Date","SMP_LABEL","SMP_EFFORT")])
+	s$Date2<-substr(s$Date,6,10)
+	tab<-unlist(dlply(s,.(Date2),function(x){sum(x$SMP_EFFORT)}))
+	#tab<-table(substr(s$Date,6,10))
+	sc<-substr(seq.Date(as.Date(paste0("2008-",min(substr(s$Date,6,10)))),as.Date(paste0("2008-",max(substr(s$Date,6,10)))),by=1),6,10)
+	miss<-setdiff(sc,names(tab))
+	add<-rep(0,length(miss))
+	names(add)<-miss
+	tab<-c(tab,add)
+	tab<-tab[order(names(tab))]
+	mm<-substr(seq.Date(as.Date("2007-12-01"),as.Date("2008-11-30"),by=1),6,10)
+	tab<-tab[order(match(names(tab),mm))]
+	tab<-tab[1:(length(tab)-min(which(!rev(tab)==0))+1)] # tricks pour le 1 janvier ? v?rifier si p?riodes c
+	
+	s<-unique(d[d$MonthC==month_comb[i],c("Date","SMP_LABEL")])
+	s$Date2<-substr(s$Date,6,10)
+	s<-ddply(s,.(Date2),function(k){nrow(k)})
+	#tab2<-s$V1
+	#names(tab2)<-s$Date2
+	
+	temp<-data.frame(Date2=names(tab),eff=tab,stringsAsFactors=FALSE)
+	temp<-join(temp,s,type="full")
 	
 	
+	names(tab)[setdiff(seq_along(tab),seq(1,length(tab),by=10))]<-""
+	subplot({barplot(tab,las=2,cex.names=0.3,cex.lab=0.3,cex.axis=0.3,yaxt="n",border=NA,ylab="",col=db);
+		axis(2,cex.axis=0.3,cex.lab=0.3,tcl=-0.1,lwd=0.1,las=2,col.axis=db);
+		par(new=TRUE);
+		bb<-barplot(temp$V1,las=2,cex.names=0.3,cex.lab=0.3,yaxt="n",cex.axis=0.3,border=NA,col=NA,plot=TRUE);
+		lines(bb[,1],temp$V1,col=cols[length(cols)],xpd=TRUE,lwd=0.8);
+		axis(4,cex.axis=0.3,cex.lab=0.3,tcl=-0.1,lwd=0.1,las=2,col.axis=cols[length(cols)]);
+		mtext("Effort (km)",side=2,cex=0.3,line=0.6);
+		mtext("N",side=4,cex=0.3,line=-0.1,xpd=TRUE);
+		mtext("Daily Effort (km) and Number of cruiseID/dates/cells Combinations (N)\nEffort journalier (km) et nombre de combinaisons croisièresID/dates/cellules (N)",side=1,cex=0.35,line=0.7)}
+		,x=c(1700000, 3500000),y=c(2160000, 2460000)) 
+	
+	
+	### LATITUDES numbers
+	text(xxlat,yylat[-1],paste0(selat[-1],"°N"),xpd=TRUE,cex=tex*0.5,adj=c(-0.15,-1))
+	text(xxlon[-1],yylon,gsub("-","",paste0(selon[-1],"°W")),xpd=TRUE,cex=tex*0.5,adj=c(-0.15,-1.25))
+	
+	off<-50000
+	lines(sca[1,],rep(sca[2,1],2)-off,lwd=1)
+	lines(rep(sca[1,1],2),sca[2,1]-off+c(-10000,10000),lwd=1)
+	lines(rep(sca[1,2],2),sca[2,1]-off+c(-10000,10000),lwd=1)
+	text(((sca[1,2]-sca[1,1])/2)+sca[1,1],sca[2,1]-off-40000,paste((sca[1,2]-sca[1,1])/1000,"km"),adj=c(0.5,0.5),cex=tex*0.5)
+	
+	rect(-60001100000,-70000000000,6000000000,-1290000,col=alpha("white",0.4),border=NA)
+	#rect(-60001100000,2960000,6000000000,3000000000,col=alpha("white",0.4),border=NA)
+	text(par("usr")[1],-1320000,"Predicted densities are derived from distance sampling models using Distance 6.0 and the GeoAviR R package with the Eastern Canadian Seabirds-at-Sea database. The sample size corresponds to the number of cruiseID/date/cell combinations.",cex=tex*0.4,adj=c(-0.01,0.5))
+	text(par("usr")[1],-1370000,"Ces densités proviennent de modèles d'échantillonnage par distance basés sur Distance 6.0 et le package R GeoAviR et utilisant les données du Suivi des oiseaux en mer de l'est du Canada. La taille d'échantillon correspond au nombre de combinaisons croisière/date/cellule.",cex=tex*0.4,adj=c(-0.01,0.5))
+	
+	### PGRID
+	#pgrid(25,cex=0.15)
+	
+	#box(col=alpha("white",0.4),lwd=1)
+	pathim<-"C:/Users/User/Documents/SCF2016_FR/ECSASatlas/temp/ECCC_ChangementClimatique/ECCC_FIP_FRA_COUL.jpg"
+	logo1 <- readJPEG(pathim,native=TRUE)
+	pathim<-"C:/Users/User/Documents/SCF2016_FR/ECSASatlas/temp/Huard-SCF/Huard.png"
+	logo2 <- readPNG(pathim,native=TRUE)
+	
+	rect(boxcut[1],boxcut[4]-90000,boxcut[1]+1000000+175000,boxcut[4],col="white",border=NA)
+	rasterImage(logo1,boxcut[1],boxcut[4]-80000,boxcut[1]+1000000,boxcut[4])
+	rasterImage(logo2,boxcut[1]+1000000+50000,boxcut[4]-80000,boxcut[1]+1000000+150000,boxcut[4])
 	
 	dev.off()
 	
 }
+
 
 
 ###########################################
