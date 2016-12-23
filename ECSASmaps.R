@@ -27,7 +27,7 @@ library(jpeg)
 library(png)
 library(data.table)
 library(RColorBrewer)
-#load("C:/Users/User/Documents/SCF2016_FR/yo9.RData")
+#load("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/ECSASmaps.RData")
 
 
 ###########################################
@@ -492,7 +492,7 @@ ma<-50*ceiling(ma/50)
 brcv<-c(0,25,50,100,ma)#CV scale
 monthNB<-list(c(12,1:3),4:7,8:11)
 lgroup<-names(ml)
-#lgroup<-c("Skuas.08091011","Murres.08091011")
+lgroup<-c("Skuas.08091011")
 ldens<-vector(mode="list",length(lgroup))
 names(ldens)<-lgroup
 i<-1
@@ -811,7 +811,7 @@ ss$nbdays<-ifelse(is.na(ss$nbdays),0,ss$nbdays)
 
 for(i in seq_along(month_comb)){
 	
-	png(paste0(pathMAPS,"/",paste0("season_",month_comb[i]),".png"),width=6,height=4.8,units="in",res=500)
+	png(paste0(pathMAPS,"/",paste0("season_",month_comb[i]),".png"),width=6,height=4.8,units="in",res=600)
 	
 	x<-ss[ss$MonthC==month_comb[i],]
 	
