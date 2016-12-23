@@ -173,7 +173,7 @@ box()
 
 
 \clearpage	
-<<nbobs, echo=FALSE, include=TRUE, eval=TRUE, message=FALSE, warning=FALSE, results="asis">>=
+<<nbobs, echo=FALSE, include=FALSE, eval=TRUE, message=FALSE, warning=FALSE, results="asis">>=
 	
 cap<-"Number of observations per group and per season."
 tab<-xtable(nbobs,caption=cap)
@@ -241,7 +241,7 @@ print(tab,include.rownames=FALSE,caption.placement="top")
 
 	x<-list.files("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps")
 	x<-x[grep("season",x)]
-	x2<-gsub("\\.|_","",x)
+	x2<-gsub("\\.|_|png","",x)
 	
 	#m<-order(match(substr(x,1,4),sg$Species_ID))
 	#x<-x[m]
@@ -268,7 +268,7 @@ print(tab,include.rownames=FALSE,caption.placement="top")
 	
 	
 	x<-list.files("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps")
-	#x<-x[-grep("season",x)]
+	x<-x[-grep("season",x)]
 	x2<-gsub("\\.|_| |png","",x)
 	
 	#m<-order(match(substr(x,1,4),sg$Species_ID))
