@@ -31,12 +31,16 @@ library(RColorBrewer)
 
 
 ###########################################
-### INIT
+### PATHS
 ###########################################
-
 
 pathECSAS<-"C:/Users/User/Documents/SCF2016_FR/ECSASdata"#"Y:/Inventaires/Pélagiques/ECSAS"
 fileECSAS<-"Master ECSAS v 3.51.mdb"
+pathshp<-"C:/Users/User/Documents/SCF2016_FR/shapefiles"
+pathSOMEC<-"C:/Users/User/Documents/SCF2016_FR/ECSASdata"
+pathMODELS<-"C:/Users/User/Documents/SCF2016_FR/ECSASatlas/distance.wrap.output"
+pathMAPSRData<-"C:/Users/user/Documents/SCF2016_FR/ECSASatlas"
+pathMAPS<-"C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps"
 
 
 ### get groups from github
@@ -62,9 +66,8 @@ prj<-"+proj=utm +zone=22 +datum=NAD83 +ellps=GRS80"
 laea<-"+proj=laea +lat_0=50 +lon_0=-65"
 
 
-### GET LAND SHAPEFILES
-## comes form natural earth
-pathshp<-"C:/Users/User/Documents/SCF2016_FR/shapefiles"
+### GET LAND SHAPEFILES AND OTHER
+# shapefiles come form natural earth
 eu<-readOGR(dsn=pathshp,layer="ne_10m_admin_0_countries",encoding="UTF-8")
 eu<-eu[eu$GEOUNIT%in%c("Greenland","Iceland","United Kingdom","Ireland","France","Spain","Portugal","Norway","Denmark") | eu$SUBUNIT%in%c("Faroe Islands","Isle of Man"),]
 eu<-spTransform(eu,CRS(laea))
@@ -73,14 +76,15 @@ na<-readOGR(dsn=pathshp,layer="ne_10m_admin_1_states_provinces",encoding="UTF-8"
 na<-na[na$admin%in%c("United States of America","Canada"),]
 na<-gIntersection(na,bbox2pol(na,ex=-1),byid=TRUE)
 na<-spTransform(na,CRS(laea))
+# On coupe avec cette bbox (déterminée en produisant les pngs avec l'objet boxcut) pour éviter les problèmes de transparence liés au dépassement des polygones des cadres
 boxcut<-c(-1848241,3712932,-1413652,3035287) 
-### On coupe avec cette bbox (déterminée en produisant les pngs avec l'objet boxcut) pour éviter les problèmes de transparence liés au dépassement des polygones des cadres
 na<-gIntersection(na,bbox2pol(boxcut,ex=-1,proj4string=laea),byid=TRUE)
 eu<-gIntersection(eu,bbox2pol(boxcut,ex=-1,proj4string=laea),byid=TRUE)
 gr<-gIntersection(gr,bbox2pol(boxcut,ex=-1,proj4string=laea),byid=TRUE)
 gl<-readOGR(dsn=pathshp,layer="ne_10m_lakes",encoding="UTF-8")
 gl<-gl[gl$name%in%c("Lake Ontario","Lake Huron","Lake Erie","Lake Michigan","Lake Superior"),]
 gl<-spTransform(gl,CRS(laea))
+# bathymetry
 b0<-spTransform(readOGR(dsn=pathshp,layer="b0",encoding="UTF-8"),CRS(laea))
 b200<-spTransform(readOGR(dsn=pathshp,layer="b200",encoding="UTF-8"),CRS(laea))
 b1000<-spTransform(readOGR(dsn=pathshp,layer="b1000",encoding="UTF-8"),CRS(laea))
@@ -89,16 +93,13 @@ b3000<-spTransform(readOGR(dsn=pathshp,layer="b3000",encoding="UTF-8"),CRS(laea)
 b4000<-spTransform(readOGR(dsn=pathshp,layer="b4000",encoding="UTF-8"),CRS(laea))
 b5000<-spTransform(readOGR(dsn=pathshp,layer="b5000",encoding="UTF-8"),CRS(laea))
 b6000<-spTransform(readOGR(dsn=pathshp,layer="b6000",encoding="UTF-8"),CRS(laea))
-
-
-### GET ATLANTIC REGIONS
-reg_atl<-readOGR("C:/Users/User/Documents/SCF2016_FR/shapefiles",layer="ATLBioregions",verbose=FALSE)#
+# get atlantic regions
+reg_atl<-readOGR(pathshp,layer="ATLBioregions",verbose=FALSE)#
 reg_atl<-spTransform(reg_atl,CRS(laea))
 
 
-
-### extract QC data that is not in ECSAS yet
-addQC<-SOMEC2ECSAS(input="C:/Users/User/Documents/SCF2016_FR/ECSASdata/SOMEC.accdb",output="C:/Users/User/Documents/SCF2016_FR/ECSASdata/ECSASexport.csv",date="2014-04-01",step="5 min",spNA=FALSE)
+### EXTRACT DATA FROM SOMEC THAT IS NOT IN ECSAS YET
+addQC<-SOMEC2ECSAS(input=paste0(pathSOMEC,"/SOMEC.accdb"),output=paste0(pathSOMEC,"/ECSASexport.csv"),date="2014-04-01",step="5 min",spNA=FALSE)
 names(addQC)<-gsub("Orig","",names(addQC))
 # For now, elements without WatchID are scrapped, it may be due to a bug in the SOMEC2ECSAS function or missing data in the original files. Check for that and add a comment in the TODO list of ECSASconnect
 addQC<-addQC[!is.na(addQC$WatchID),]
@@ -107,7 +108,7 @@ addQC<-addQC[!is.na(addQC$WatchID),]
 ### MAKE SURE SOMEC database is ok when I LEAVE!!!!!!!!!!!!
 ### Replace french names and wrong names in Quebec data
 ### There are about 15 observations without a count number table(addQC$Alpha[is.na(addQC$Count)],useNA="always")
-db<-odbcConnectAccess2007("C:/Users/User/Documents/SCF2016_FR/ECSASdata/SOMEC.accdb") ### nedd a last update to SOMEC and make sure it is correct compared to the old version
+db<-odbcConnectAccess2007(paste0(pathSOMEC,"/SOMEC.accdb"))
 qc<-sqlFetch(db,"Code espèces",as.is=TRUE)
 odbcClose(db)
 bn<-c("foba","fubo","fulm","GOAC","goar","guma","LALQ","LIMICOLESP","OCWL","PATC","PLON","RAZO","rien","SCSP")
@@ -267,7 +268,7 @@ mg<-distance.wrap(ds,
     STR_AREA="STR_AREA",
     SMP_LABEL="SMP_LABEL",
     STR_LABEL="STR_LABEL",
-    path="C:/Users/User/Documents/SCF2016_FR/ECSASatlas/distance.wrap.output",
+    path=pathMODELS,
     pathMCDS=pathMCDS
 )
 
@@ -379,9 +380,6 @@ names(ml)<-names(dl)
 
 
 
-### ADD A TOTAL
-
-
 ###########################################
 ### GROUP MODELS
 ###########################################
@@ -415,7 +413,7 @@ for(i in seq_along(dl)){
      SMP_LABEL="SMP_LABEL",
      STR_LABEL="cell",
      stratum="STR_LABEL",
-     path="C:/Users/User/Documents/SCF2016_FR/ECSASatlas/distance.wrap.output",
+     path=pathMODELS,
      pathMCDS=pathMCDS,
      multiplier=2/mult
    )
@@ -428,20 +426,12 @@ for(i in seq_along(dl)){
 
 #global.summary.distanceList(model=ml,species=NULL,file="temp",directory="C:/Users/rousseuf/Documents")
 
-save.image("C:/Users/user/Documents/SCF2016_FR/ECSASatlas/ECSASmaps.RData")
+
+### SAVE AN IMAGE AT THIS POINT FOR USE IN THE ATLAS PDF
+save.image(paste0(pathMAPSRData,"/ECSASmaps.RData"))
 
 
-###########################################
-### PRODUCE ATLAS FIGURES
-###########################################
-
-source("C:/Users/user/Documents/temp_maps.R",encoding="UTF-8")
-
-###########################################
-### PRODUCE ATLAS FIGURES
-###########################################
-
-### build latitudes
+### BUILD LATITUDES SHP
 m<-expand.grid(seq(-160,20,by=0.2),seq(25,85,by=5))
 lat<-SpatialPoints(m,proj4string=CRS(ll))
 lat<-spTransform(lat,CRS(proj4string(grid)))
@@ -455,11 +445,13 @@ selat<-seq(r[1],r[2],by=5)
 yylat<-sapply(selat,function(k){
 	coordinates(p)[which.min(abs(coordinates(p2)[,2]-k)),2]	
 })
+
+# determine what will be overland
 o1<-over(lat,na)
 o2<-over(lat,eu)
 olat<-!is.na(o1) | !is.na(o2)
 
-### build longitudes
+### BUILD LONGITUDE SHP
 m<-expand.grid(seq(-160,20,by=10),seq(25,85,by=0.1))
 lon<-SpatialPoints(m,proj4string=CRS(ll))
 lon<-spTransform(lon,CRS(proj4string(grid)))
@@ -473,17 +465,18 @@ selon<-seq(r[1],r[2],by=10)
 xxlon<-sapply(selon,function(k){
 	coordinates(p)[which.min(abs(coordinates(p2)[,1]-k)),1]	
 })
+
+# determine what will be over the land 
 o1<-over(lon,na)
 o2<-over(lon,eu)
 olon<-!is.na(o1) | !is.na(o2)
 
 
+###########################################
+### PRODUCE ATLAS FIGURES
+###########################################
 
-
-
-#############################
-#############################
-#############################
+#source("C:/Users/user/Documents/temp_maps.R",encoding="UTF-8")
 
 groupn<-list(Terns=c("All Terns","Toutes les sternes"),Shearwaters=c("All Shearwaters","Tous les puffins"),"Storm-Petrels"=c("All Storm-Petrels","Toutes les océanites"),"Diving Waterfowl"=c("Diving Waterfowl","Canards plongeurs"),Phalaropes=c("All Phalaropes","Tous les phalaropes"),Jaegers=c("All Jaegers","Tous les petits labbes"),Skuas=c("All Skuas","Tous les grands labbes"),Alcids=c("All Alcids","Tous les alcidés"),Gulls=c("All Gulls","Tous les goélands et mouettes"),Murres=c("All Murres","Guillemot marmette et marmettes"))
 
@@ -499,7 +492,7 @@ ma<-50*ceiling(ma/50)
 brcv<-c(0,25,50,100,ma)#CV scale
 monthNB<-list(c(12,1:3),4:7,8:11)
 lgroup<-names(ml)
-lgroup<-c("Skuas.08091011","Murres.08091011")
+#lgroup<-c("Skuas.08091011","Murres.08091011")
 ldens<-vector(mode="list",length(lgroup))
 names(ldens)<-lgroup
 i<-1
@@ -508,7 +501,7 @@ for(i in seq_along(lgroup)){
 	
 	group<-lgroup[i]
 	
-	png(paste0("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps/",gsub("\\.","_",group),".png"),width=6,height=4.8,units="in",res=600)
+	png(paste0(pathMAPS,"/",gsub("\\.","_",group),".png"),width=6,height=4.8,units="in",res=600)
 	
 	dens<-density.map(ml[[group]],by.stratum=TRUE)
 	dat<-dl[[group]]
@@ -526,9 +519,6 @@ for(i in seq_along(lgroup)){
 	count<-ddply(dl[[group]],.(cell),function(i){sum(as.numeric(i$Count),na.rm=TRUE)})
 	count<-ddply(dl[[group]],.(cell),function(i){paste(sum(as.numeric(i$Count),na.rm=TRUE),round(sum(i$WatchLenKm[!duplicated(i$WatchID)],na.rm=TRUE),0),collapse="\n")})
 	grid$count<-count$V1[match(grid$id,count$cell)]
-	#grid$cv<-((dens$"95% Upper"[match(grid$id,dens$Region)]-dens$"95% Lower"[match(grid$id,dens$Region)])/grid$val)*100
-	#grid$cv<-ifelse(grid$cv>300,300,grid$cv)
-	
 	grid$nbsamp<-dens$"nbsamp"[match(grid$id,dens$Region)]
 	
 	r<-range(c(grid$val),na.rm=TRUE)
@@ -594,11 +584,7 @@ for(i in seq_along(lgroup)){
 	plot(na,add=TRUE,lwd=0.1,border=NA,col="grey75")
 	
 	### PLOT GRID WITH HOLES OR NOT
-	#plot(grid[k,],col=grid$col[k],border=ifelse(is.na(grid$col[k]),alpha("lightblue",trans),NA),add=TRUE,lwd=0.5)
 	plot(gholes[k],col=grid$col[k],border=ifelse(is.na(grid$col[k]),alpha("lightblue",trans),NA),add=TRUE,lwd=0.5)
-	
-	### PLOT Atalntic region
-	#plot(reg_atl,border=alpha("darkgreen",0.25),lwd=2,add=TRUE)
 	
 	### PLOT unvisited holes in grid
 	grid[k,] %>% 
@@ -729,7 +715,7 @@ for(i in seq_along(lgroup)){
 	text(se,2580000,wmonthFR,col=ifelse(nmonth%in%monthNB[[mmonth]],cols[length(cols)],"grey55"),font=ifelse(nmonth%in%monthNB[[mmonth]],2,1),cex=0.35,adj=c(0,0.5))
 	
 	
-	### barplot
+	### BARPLOT
 	s<-unique(dl[[group]][,c("Date","SMP_LABEL","SMP_EFFORT")])
 	s$Date2<-substr(s$Date,6,10)
 	tab<-unlist(dlply(s,.(Date2),function(x){sum(x$SMP_EFFORT)}))
@@ -765,26 +751,7 @@ for(i in seq_along(lgroup)){
 		mtext("Birds / km\nOiseaux / km",side=4,cex=0.3,line=0.5);
 		mtext("Daily Effort (km) and Raw Linear Bird Densities\nEffort journalier (km) et densités linéaires brutes d'oiseaux",side=1,cex=0.35,line=0.7)}
 		,x=c(1600000, 3350000),y=c(1860000, 2160000)) #c(-1125000, -750000)
-	
-	
-	### MODULE DE IC HEXAGONAL
-	#cent<-2500000
-	#h1<-hexpolygon(cent,-800000,dx=200000,dy=120000)
-	#h2<-hexpolygon(cent,-800000,dx=200000/2,dy=120000/2)
-	#h3<-hexpolygon(cent,-800000,dx=200000/4,dy=120000/4)
-	#text(cent+250000,max(as.numeric(gsub("native","",h1$y))),"pred",cex=tex*0.8,adj=c(0,0.5))
-	#text(cent+250000,max(as.numeric(gsub("native","",h2$y))),"lowCI",cex=tex*0.8,adj=c(0,0.5))
-	#text(cent+250000,max(as.numeric(gsub("native","",h3$y))),"uppCI",cex=tex*0.8,adj=c(0,0.5))
-	#h1<-SpatialPolygons(list(Polygons(list(Polygon(matrix(as.numeric(gsub("native","",c(h1$x,h1$y))),ncol=2))),ID=1)),proj4string=CRS(proj4string(grid)))
-	#h2<-SpatialPolygons(list(Polygons(list(Polygon(matrix(as.numeric(gsub("native","",c(h2$x,h2$y))),ncol=2))),ID=1)),proj4string=CRS(proj4string(grid)))
-	#h3<-SpatialPolygons(list(Polygons(list(Polygon(matrix(as.numeric(gsub("native","",c(h3$x,h3$y))),ncol=2))),ID=1)),proj4string=CRS(proj4string(grid)))
-	#plot(h1,add=TRUE,col=alpha("red",0.5),border=NA)
-	#plot(h2,add=TRUE,col=alpha("white",0.5),border=NA)
-	#plot(h3,add=TRUE,col=alpha("black",0.5),border=NA)
-	
-	#subplot({hist(grid$diff,breaks=seq(0,300000,by=5),xlim=c(0,100))}, c(-1353981.9, 0), c(7400000, 7900000),pars=list(bg="yellow"))
-	
-	
+
 	
 	### LATITUDES numbers
 	text(xxlat,yylat[-1],paste0(selat[-1],"°N"),xpd=TRUE,cex=tex*0.5,adj=c(-0.15,-1))
@@ -801,20 +768,14 @@ for(i in seq_along(lgroup)){
 	text(par("usr")[1],-1320000,"Predicted densities are derived from distance sampling models using Distance 6.0 and the GeoAviR R package with the Eastern Canadian Seabirds-at-Sea database. The sample size corresponds to the number of cruiseID/date/cell combinations.",cex=tex*0.4,adj=c(-0.01,0.5))
 	text(par("usr")[1],-1370000,"Ces densités proviennent de modèles d'échantillonnage par distance basés sur Distance 6.0 et le package R GeoAviR et utilisant les données du Suivi des oiseaux en mer de l'est du Canada. La taille d'échantillon correspond au nombre de combinaisons croisière/date/cellule.",cex=tex*0.4,adj=c(-0.01,0.5))
 	
-	### PGRID
-	#pgrid(25,cex=0.15)
 	
-	#box(col=alpha("white",0.4),lwd=1)
-	pathim<-"C:/Users/User/Documents/SCF2016_FR/ECSASatlas/temp/ECCC_ChangementClimatique/ECCC_FIP_FRA_COUL.jpg"
-	logo1 <- readJPEG(pathim,native=TRUE)
-	pathim<-"C:/Users/User/Documents/SCF2016_FR/ECSASatlas/temp/Huard-SCF/Huard.png"
-	logo2 <- readPNG(pathim,native=TRUE)
+	# PLOT EC LOGOS
+	logo1<-readJPEG(paste0(pathMAPSRData,"/ECCC_FIP_FRA_COUL.jpg"),native=TRUE)
+	logo2<-readPNG(paste0(pathMAPSRData,"/Huard.png"),native=TRUE)
 	
 	rect(boxcut[1],boxcut[4]-90000,boxcut[1]+1000000+175000,boxcut[4],col="white",border=NA)
 	rasterImage(logo1,boxcut[1],boxcut[4]-80000,boxcut[1]+1000000,boxcut[4])
 	rasterImage(logo2,boxcut[1]+1000000+50000,boxcut[4]-80000,boxcut[1]+1000000+150000,boxcut[4])
-	
-	
 	
 	dev.off()
 	
@@ -828,7 +789,6 @@ for(i in seq_along(lgroup)){
 	})
 	
 }
-
 
 
 ###########################################
@@ -848,12 +808,10 @@ ss<-left_join(eg,ss)
 ss$effort<-ifelse(is.na(ss$effort),0,ss$effort)
 ss$nbdays<-ifelse(is.na(ss$nbdays),0,ss$nbdays)
 
-#windows()
-#par(mar=c(0,0,0,0),mfrow=c(2,2))
 
 for(i in seq_along(month_comb)){
 	
-	png(paste0("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps/",paste0("season_",month_comb[i]),".png"),width=6,height=4.8,units="in",res=500)
+	png(paste0(pathMAPS,"/",paste0("season_",month_comb[i]),".png"),width=6,height=4.8,units="in",res=500)
 	
 	x<-ss[ss$MonthC==month_comb[i],]
 	
@@ -1015,14 +973,9 @@ for(i in seq_along(month_comb)){
 	text(par("usr")[1],-1320000,"Predicted densities are derived from distance sampling models using Distance 6.0 and the GeoAviR R package with the Eastern Canadian Seabirds-at-Sea database. The sample size corresponds to the number of cruiseID/date/cell combinations.",cex=tex*0.4,adj=c(-0.01,0.5))
 	text(par("usr")[1],-1370000,"Ces densités proviennent de modèles d'échantillonnage par distance basés sur Distance 6.0 et le package R GeoAviR et utilisant les données du Suivi des oiseaux en mer de l'est du Canada. La taille d'échantillon correspond au nombre de combinaisons croisière/date/cellule.",cex=tex*0.4,adj=c(-0.01,0.5))
 	
-	### PGRID
-	#pgrid(25,cex=0.15)
-	
-	#box(col=alpha("white",0.4),lwd=1)
-	pathim<-"C:/Users/User/Documents/SCF2016_FR/ECSASatlas/temp/ECCC_ChangementClimatique/ECCC_FIP_FRA_COUL.jpg"
-	logo1 <- readJPEG(pathim,native=TRUE)
-	pathim<-"C:/Users/User/Documents/SCF2016_FR/ECSASatlas/temp/Huard-SCF/Huard.png"
-	logo2 <- readPNG(pathim,native=TRUE)
+	# PLOT EC LOGOS
+	logo1<-readJPEG(paste0(pathMAPSRData,"/ECCC_FIP_FRA_COUL.jpg"),native=TRUE)
+	logo2<-readPNG(paste0(pathMAPSRData,"/Huard.png"),native=TRUE)
 	
 	rect(boxcut[1],boxcut[4]-90000,boxcut[1]+1000000+175000,boxcut[4],col="white",border=NA)
 	rasterImage(logo1,boxcut[1],boxcut[4]-80000,boxcut[1]+1000000,boxcut[4])
@@ -1033,9 +986,8 @@ for(i in seq_along(month_comb)){
 }
 
 
-
 ###########################################
-### OPEN DATA
+### PRODUCE OPEN DATA
 ###########################################
 
 
@@ -1072,61 +1024,17 @@ g<-ddply(s,.(cell,MonthC),function(i){
 
 
 
-
-
 ###########################################
 ### WRITE FILES FOR OPEN DATA
 ###########################################
 
-write.xlsx(opendata,"C:/Users/User/Documents/SCF2016_FR/ECSASatlas/open_data.xlsx",row.names=FALSE,col.names=TRUE,sheetName="Densities",showNA=FALSE)
+write.xlsx(opendata,paste0(pathMAPSRData,"/open_data.xlsx"),row.names=FALSE,col.names=TRUE,sheetName="Densities",showNA=FALSE)
 
-write.xlsx(g,"C:/Users/User/Documents/SCF2016_FR/ECSASatlas/open_data.xlsx",row.names=FALSE,col.names=TRUE,sheetName="Effort",append=TRUE,showNA=FALSE)
+write.xlsx(g,paste0(pathMAPSRData,"/open_data.xlsx"),row.names=FALSE,col.names=TRUE,sheetName="Effort",append=TRUE,showNA=FALSE)
 
-writeOGR(grid[,"id"],dsn="C:/Users/User/Documents/SCF2016_FR/ECSASatlas",layer="atlas_grid",driver="ESRI Shapefile")
+writeOGR(grid[,"id"],dsn=pathMAPSRData,layer="atlas_grid",driver="ESRI Shapefile")
 
-zip("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/atlas_images",list.files("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps",full.names=TRUE,pattern=".png")[1:2])
+zip(paste0(pathMAPSRData,"/atlas_images"),list.files(pathMAPS,full.names=TRUE,pattern=".png")[1:2])
 
-
-
-
-# 1-Construire une fonction de détection qui est indépendente des périodes sélectionnées (donc les périodes sont lsub?)
-# 2-Pour les espèces rares, utiliser le groupe pour construire la fonction de détection
-# 3-
-
-### verif dates
-
-
-
-###########################################
-### produce a plot by OBS/Mission to detect wrong patterns of detection
-###########################################
-
-keep<-ddply(d,.(Observer1,CruiseID),nrow)
-keep<-ddply(d,.(Observer1,CruiseID),function(i){any(which(i$Count>1))})
-cruise<-keep$CruiseID[keep$V1]
-  
-mobs<-distance.wrap(d[d$CruiseID%in%cruise,],#il n'y a que 4 lignes pour ce CruiseID
-     SMP_EFFORT="WatchLenKm",
-     DISTANCE="Distance",
-     SIZE="Count",
-     units=list(Type="Line",
-       Distance="Perp",
-       Length_units="Kilometers",
-       Distance_units="Meters",
-       Area_units="Square kilometers"),
-     breaks=c(0,50,100,200,300), 
-     estimator=list(c("HN","CO")),
-     lsub=list(Observer1=NULL,CruiseID=NULL), 
-     empty=c("Observer1","CruiseID"),
-     split=TRUE,
-     STR_AREA="STR_AREA",
-     SMP_LABEL="WatchID",
-     #stratum="cell",
-     path="C:/Users/rousseuf/distance.wrap.output",
-     pathMCDS=pathMCDS
-)
-
-names(mobs)<-gsub("-|_| ","",names(mobs)) # on dirait que les fichiers avec - _ ou des espaces ne passent pas
-global.summary.distanceList(model=mobs,species=NULL,file="obs",directory="C:/Users/User/Documents")
 
 
