@@ -53,7 +53,7 @@ spname<-read.csv(text=spname,header=TRUE,stringsAsFactors=FALSE)
 
 
 ### get ECSAS database
-ecsas<-ECSAS.extract(lat=c(39.33489,74.65058),long=c(-90.50775,-38.75887),sub.program=c("Atlantic","Quebec"),ecsas.drive=pathECSAS,ecsas.file=fileECSAS)
+ecsas<-ECSAS.extract(lat=c(39.33489,74.65058),long=c(-90.50775,-38.75887),sub.program=c("Atlantic","Quebec"),ecsas.drive=pathECSAS,ecsas.file=fileECSAS,distMeth=c(14,20))
 ecsas$English<-as.character(ecsas$English)
 
 ### path pour MCDS.exe
