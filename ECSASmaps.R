@@ -426,10 +426,11 @@ for(i in seq_along(dl)){
 
 #global.summary.distanceList(model=ml,species=NULL,file="temp",directory="C:/Users/rousseuf/Documents")
 
-
+##############################################################
 ### SAVE AN IMAGE AT THIS POINT FOR USE IN THE ATLAS PDF
-save.image(paste0(pathMAPSRData,"/ECSASmaps.RData"))
-
+#save.image(paste0(pathMAPSRData,"/ECSASmaps.RData"))
+#load(paste0(pathMAPSRData,"/ECSASmaps.RData"))
+##############################################################
 
 ### BUILD LATITUDES SHP
 m<-expand.grid(seq(-160,20,by=0.2),seq(25,85,by=5))
@@ -492,7 +493,7 @@ ma<-50*ceiling(ma/50)
 brcv<-c(0,25,50,100,ma)#CV scale
 monthNB<-list(c(12,1:3),4:7,8:11)
 lgroup<-names(ml)
-lgroup<-c("Skuas.08091011")
+lgroup<-c("NOFU.08091011")
 ldens<-vector(mode="list",length(lgroup))
 names(ldens)<-lgroup
 i<-1
@@ -767,6 +768,7 @@ for(i in seq_along(lgroup)){
 	#rect(-60001100000,2960000,6000000000,3000000000,col=alpha("white",0.4),border=NA)
 	text(par("usr")[1],-1320000,"Predicted densities are derived from distance sampling models using Distance 6.0 and the GeoAviR R package with the Eastern Canadian Seabirds-at-Sea database. The sample size corresponds to the number of cruiseID/date/cell combinations.",cex=tex*0.4,adj=c(-0.01,0.5))
 	text(par("usr")[1],-1370000,"Ces densités proviennent de modèles d'échantillonnage par distance basés sur Distance 6.0 et le package R GeoAviR et utilisant les données du Suivi des oiseaux en mer de l'est du Canada. La taille d'échantillon correspond au nombre de combinaisons croisière/date/cellule.",cex=tex*0.4,adj=c(-0.01,0.5))
+	text(par("usr")[2],-1370000,Sys.time(),cex=tex*0.4,adj=c(1.1,0.5))
 	
 	
 	# PLOT EC LOGOS
@@ -789,6 +791,7 @@ for(i in seq_along(lgroup)){
 	})
 	
 }
+
 
 
 ###########################################
