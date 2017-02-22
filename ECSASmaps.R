@@ -302,10 +302,12 @@ ddply(d,.(MonthC),function(x){
 })
 
 ### BUILD MULTIPLIER LIST WITH PROBABILITY OF DETECTION FOR SPECIES AND GROUPS
-temp<-sapply(group_detection_list,function(i){
-  x<-mg[[i]]$parameter_estimates$Global
-  x$Estimates[x$Parameters=="p"]
+temp<-lapply(group_detection_list,function(i){
+  #browser()
+	 x<-mg[[i]]$parameter_estimates$Global
+  x[x$Parameters=="p",c("Estimates","SE","df")]
 })
+names(temp)<-group_detection_list
 
 g<-unique(groups[,c("group_detection","group_atlas")])
 g<-g[!(g[,1]=="" | g[,2]==""),]
@@ -317,14 +319,14 @@ names(temp)[cond]<-g$group_atlas[cond]
 mult_list<-temp
 mult_list<-mult_list[match(d$group_atlas[match(unique(d$Alpha),d$Alpha)],names(mult_list))]
 names(mult_list)<-unique(d$Alpha)
-mult_list<-mult_list[!is.na(mult_list)]
+mult_list<-mult_list[!sapply(mult_list,is.null)]
 mult_list<-c(mult_list,temp) ### added values for groups
-mult_list<-unlist(mult_list)
+#mult_list<-unlist(mult_list)
 
 # add good Dovekie value
-mult_list[which(names(mult_list)=="DOVE")]<-unname(mult_list[which(names(mult_list)=="Dovekie")]) 
+mult_list[[which(names(mult_list)=="DOVE")]]<-mult_list[[which(names(mult_list)=="Dovekie")]]
 # add Murres
-mult_list<-c(mult_list,Murres=unname(mult_list[which(names(mult_list)=="Alcids")]))
+mult_list$Murres<-mult_list[[which(names(mult_list)=="Alcids")]]
 
 
 
@@ -386,11 +388,11 @@ names(ml)<-names(dl)
 
 #ALSP.08091011 ne run pas pour une raison obscure
 
-for(i in seq_along(dl)){
+for(i in seq_along(dl)[1]){
   
    x<-dl[[i]]
    #x<-x[x$SMP_LABEL%in%sample(unique(x$SMP_LABEL),100),]
-   mult<-mult_list[match(sapply(strsplit(names(dl)[i],"\\."),function(x){x[1]}),names(mult_list))]
+   mult<-mult_list[[match(sapply(strsplit(names(dl)[i],"\\."),function(x){x[1]}),names(mult_list))]]
    x$SMP_LABEL<-as.numeric(as.factor(x$SMP_LABEL))
    x$STR_AREA<-gArea(grid[1,])/1000/1000
    x$Distance<-ifelse(x$Count=="","",x$Distance)
@@ -415,7 +417,7 @@ for(i in seq_along(dl)){
      stratum="STR_LABEL",
      path=pathMODELS,
      pathMCDS=pathMCDS,
-     multiplier=2/mult
+     multiplier=c(2/mult$Estimates,mult$SE/mult$Estimates^2,mult$df)
    )
    print(names(ml)[i])
    ml[[i]]<-m
