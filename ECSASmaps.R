@@ -418,6 +418,7 @@ for(i in seq_along(dl)[1]){
      path=pathMODELS,
      pathMCDS=pathMCDS,
      multiplier=c(2/mult$Estimates,mult$SE/mult$Estimates^2,mult$df)
+     ### multiplier not working !!!!!!!!!!!!!!
    )
    print(names(ml)[i])
    ml[[i]]<-m
