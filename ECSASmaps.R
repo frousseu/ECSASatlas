@@ -251,7 +251,7 @@ ds$SMP_LABEL<-as.numeric(factor(ds$SMP_LABEL))
 ds$STR_AREA<-gArea(grid[1,])/1000/1000
 length(unique(ds$SMP_LABEL))
 
-mg<-distance.wrap(ds,
+mg<-distance.wrap(ds[ds$group_detection=="Dovekie",],
     SMP_EFFORT="SMP_EFFORT",
     DISTANCE="Distance",
     SIZE="Count",
@@ -388,7 +388,7 @@ names(ml)<-names(dl)
 
 #ALSP.08091011 ne run pas pour une raison obscure
 
-for(i in seq_along(dl)[1]){
+for(i in seq_along(dl)){
   
    x<-dl[[i]]
    #x<-x[x$SMP_LABEL%in%sample(unique(x$SMP_LABEL),100),]
