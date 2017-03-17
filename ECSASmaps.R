@@ -564,7 +564,7 @@ for(i in seq_along(lgroup)){
 	
 
 	### plot bathymetry shading
-	lb<-c(75,72,69,66,63,60,57,54)-5 #c(70,65,60,55,50,45,42,39)
+	lb<-c(70,67,64,61,58,55,52,49)
 	plot(b0,col=hcl(240,50,lb[1]),border=NA,add=TRUE)
 	plot(b200,col=hcl(240,50,lb[2]),border=NA,add=TRUE)
 	plot(b1000,col=hcl(240,50,lb[3]),border=NA,add=TRUE)
@@ -831,12 +831,12 @@ for(i in seq_along(month_comb)){
 	grid$col<-colo.scale(grid$effort,cols=cols,breaks=br)
 	
 	### PLOT
-	par(mar=c(0,0,0,0),mgp=c(0.5,0.1,0))
+	par(mar=c(0,0,0,0),mgp=c(0.5,0.1,0),bg=hcl(240,50,49))
 	plot(1,1,type="n",xaxs="i",yaxs="i",xlim=c(-1848241,3712932),ylim=c(-1413652,3035287))
 	boxcut<-par("usr")
 	
 	### plot bathymetry shading
-	lb<-c(75,72,69,66,63,60,57,54)-5 #c(70,65,60,55,50,45,42,39)
+	lb<-c(70,67,64,61,58,55,52,49)
 	plot(b0,col=hcl(240,50,lb[1]),border=NA,add=TRUE)
 	plot(b200,col=hcl(240,50,lb[2]),border=NA,add=TRUE)
 	plot(b1000,col=hcl(240,50,lb[3]),border=NA,add=TRUE)
@@ -860,8 +860,8 @@ for(i in seq_along(month_comb)){
 	plot(grid,col=alpha(grid$col,trans),border=ifelse(grid$effort<0.001,"lightblue",NA),lwd=0.5,add=TRUE)
 	
 	### plot shapefiles
-	plot(eu,add=TRUE,lwd=0.5,border="grey55",col=alpha("grey75",0.65))
-	plot(na,add=TRUE,lwd=0.5,border="grey55",col=alpha("grey75",0.65))
+	plot(eu,add=TRUE,lwd=0.5,border="grey55",col=alpha("grey75",1))
+	plot(na,add=TRUE,lwd=0.5,border="grey55",col=alpha("grey75",1))
 	plot(gl,col=pb,lwd=0.5,border="grey55",add=TRUE)
 	
 	### plot bathymetry lines to go over cells
