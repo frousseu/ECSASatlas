@@ -495,7 +495,7 @@ ma<-50*ceiling(ma/50)
 brcv<-c(0,25,50,100,ma)#CV scale
 monthNB<-list(c(12,1:3),4:7,8:11)
 lgroup<-names(ml)
-lgroup<-c("NOFU.08091011")
+lgroup<-c("DOVE.08091011")
 ldens<-vector(mode="list",length(lgroup))
 names(ldens)<-lgroup
 i<-1
@@ -556,7 +556,7 @@ for(i in seq_along(lgroup)){
 
 	
 	### PLOT
-	par(mar=c(0,0,0,0),mgp=c(0.5,0.1,0))
+	par(mar=c(0,0,0,0),mgp=c(0.5,0.1,0),bg=hcl(240,50,49))
 	k<-!is.na(grid$val)
 	#plot(grid,bg="#7AAFD1",border="#7AAFD1",xaxs="i",yaxs="i",xlim=c(-1848241,3712932),ylim=c(-1413652,3035287))
 	plot(1,1,type="n",xaxs="i",yaxs="i",xlim=c(-1848241,3712932),ylim=c(-1413652,3035287))
