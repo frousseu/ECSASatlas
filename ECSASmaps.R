@@ -4,7 +4,8 @@ library(sp)
 library(rgeos)
 library(dplyr)
 library(ECSASconnect)
-library(GeoAviR)
+#library(GeoAviR)
+library(R2MCDS)
 library(rgdal)
 library(readxl)
 library(TeachingDemos)
@@ -142,7 +143,7 @@ d$Distance<-ifelse(is.na(m),d$Distance,dn[m])
 d<-d[which(d$LongStart>(-150) & d$LongStart<(-18)),] ### j'enlève la croisière partant vers l'uerope car créer des distortions dans les projections
 d<-d[which(d$LatStart>(0) & d$LatStart<(90)),]
 #d<-d[which(d$InTransect%in%c(-1)),] les transects vides ont des NA
-d<-distance.filter(d,distance.labels=c(25,75,150,250))
+d<-mcds.filter(d,distance.labels=c(25,75,150,250))
 d<-d[order(d$CruiseID,d$WatchID,d$Date,substr(d$StartTime,12,19)),]
 d$Month<-substr(d$Date,6,7)
 month_comb<-c("12010203","04050607","08091011")
@@ -251,7 +252,7 @@ ds$SMP_LABEL<-as.numeric(factor(ds$SMP_LABEL))
 ds$STR_AREA<-gArea(grid[1,])/1000/1000
 length(unique(ds$SMP_LABEL))
 
-mg<-distance.wrap(ds,
+mg<-mcds.wrap(ds,
     SMP_EFFORT="SMP_EFFORT",
     DISTANCE="Distance",
     SIZE="Count",
@@ -397,7 +398,7 @@ for(i in seq_along(dl)){
    x$STR_AREA<-gArea(grid[1,])/1000/1000
    x$Distance<-ifelse(x$Count=="","",x$Distance)
    
-   m<-distance.wrap(x, 
+   m<-mcds.wrap(x, 
      SMP_EFFORT="SMP_EFFORT",
      DISTANCE="Distance",
      SIZE="Count",
@@ -421,6 +422,8 @@ for(i in seq_along(dl)){
    )
    print(names(ml)[i])
    ml[[i]]<-m
+   name<-gsub("\\.","_",names(ml)[i])
+   global.summary.distanceFit(m,species=name,file=name,directory=pathMODELS)
 }
 
 #ml<-unlist(ml,recursive=FALSE)
@@ -504,7 +507,7 @@ for(i in seq_along(lgroup)){
 	
 	group<-lgroup[i]
 	
-	png(paste0(pathMAPS,"/",gsub("\\.","_",group),"2.png"),width=6,height=4.8,units="in",res=600)
+	png(paste0(pathMAPS,"/",gsub("\\.","_",group),"_2.png"),width=6,height=4.8,units="in",res=600)
 	
 	dens<-ml[[group]]$density_estimate$Stratum
 	dat<-dl[[group]]
