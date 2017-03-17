@@ -99,7 +99,7 @@ reg_atl<-spTransform(reg_atl,CRS(laea))
 
 
 ### EXTRACT DATA FROM SOMEC THAT IS NOT IN ECSAS YET
-addQC<-SOMEC2ECSAS(input=paste0(pathSOMEC,"/SOMEC.accdb"),output=paste0(pathSOMEC,"/ECSASexport.csv"),date="2014-04-01",step="5 min",spNA=FALSE)
+addQC<-SOMEC2ECSAS(input=paste0(pathSOMEC,"/SOMEC - CopieMOD31012017_clean.accdb"),output=paste0(pathSOMEC,"/ECSASexport.csv"),date="2011-01-01",step="5 min",spNA=FALSE)
 names(addQC)<-gsub("Orig","",names(addQC))
 # For now, elements without WatchID are scrapped, it may be due to a bug in the SOMEC2ECSAS function or missing data in the original files. Check for that and add a comment in the TODO list of ECSASconnect
 addQC<-addQC[!is.na(addQC$WatchID),]
@@ -108,7 +108,7 @@ addQC<-addQC[!is.na(addQC$WatchID),]
 ### MAKE SURE SOMEC database is ok when I LEAVE!!!!!!!!!!!!
 ### Replace french names and wrong names in Quebec data
 ### There are about 15 observations without a count number table(addQC$Alpha[is.na(addQC$Count)],useNA="always")
-db<-odbcConnectAccess2007(paste0(pathSOMEC,"/SOMEC.accdb"))
+db<-odbcConnectAccess2007(paste0(pathSOMEC,"/SOMEC - CopieMOD31012017_clean.accdb"))
 qc<-sqlFetch(db,"Code espèces",as.is=TRUE)
 odbcClose(db)
 bn<-c("foba","fubo","fulm","GOAC","goar","guma","LALQ","LIMICOLESP","OCWL","PATC","PLON","RAZO","rien","SCSP")
@@ -251,7 +251,7 @@ ds$SMP_LABEL<-as.numeric(factor(ds$SMP_LABEL))
 ds$STR_AREA<-gArea(grid[1,])/1000/1000
 length(unique(ds$SMP_LABEL))
 
-mg<-distance.wrap(ds[ds$group_detection=="Dovekie",],
+mg<-distance.wrap(ds,
     SMP_EFFORT="SMP_EFFORT",
     DISTANCE="Distance",
     SIZE="Count",
