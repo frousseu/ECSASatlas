@@ -262,7 +262,7 @@ mg<-mcds.wrap(ds,
       Distance_units="Meters",
       Area_units="Square kilometers"),
     breaks=c(0,50,100,200,300), 
-    estimator=list(c("HN","CO")),
+    estimator=NULL, #c("HN","CO")
     lsub=list(group_detection=group_detection_list), 
     empty=NULL,
     split=TRUE,
@@ -272,6 +272,13 @@ mg<-mcds.wrap(ds,
     path=pathMODELS,
     pathMCDS=pathMCDS
 )
+
+lapply(names(mg),function(i){
+ 	m<-mg[[i]]
+	 name<-i
+	 global.summary.distanceFit(m,species=name,file=name,directory=pathMODELS)
+})
+
 
 
 
