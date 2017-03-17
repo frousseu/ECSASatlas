@@ -430,8 +430,8 @@ for(i in seq_along(dl)){
 
 ##############################################################
 ### SAVE AN IMAGE AT THIS POINT FOR USE IN THE ATLAS PDF
-#save.image(paste0(pathMAPSRData,"/ECSASmaps.RData"))
-#load(paste0(pathMAPSRData,"/ECSASmaps.RData"))
+#save.image(paste0(pathMAPSRData,"/ECSASmaps2.RData"))
+#load(paste0(pathMAPSRData,"/ECSASmaps2.RData"))
 ##############################################################
 
 ### BUILD LATITUDES SHP
@@ -490,7 +490,7 @@ cols<-rev(c("darkred",colo.scale(seq(0,1,length.out=3),c("red","white"))))
 trans<-0.65
 mag<-1
 tex<-0.6
-ma<-max(do.call("rbind",lapply(ml,density.map,by.stratum=TRUE))$"% of var.",na.rm=TRUE)
+ma<-max(unlist(lapply(ml,function(i){i$density_estimate$Stratum$"% of var."})),na.rm=TRUE)
 ma<-50*ceiling(ma/50)
 brcv<-c(0,25,50,100,ma)#CV scale
 monthNB<-list(c(12,1:3),4:7,8:11)
@@ -504,25 +504,25 @@ for(i in seq_along(lgroup)){
 	
 	group<-lgroup[i]
 	
-	png(paste0(pathMAPS,"/",gsub("\\.","_",group),".png"),width=6,height=4.8,units="in",res=600)
+	png(paste0(pathMAPS,"/",gsub("\\.","_",group),"2.png"),width=6,height=4.8,units="in",res=600)
 	
-	dens<-density.map(ml[[group]],by.stratum=TRUE)
+	dens<-ml[[group]]$density_estimate$Stratum
 	dat<-dl[[group]]
 	temp<-ddply(dat,.(cell),function(k){length(unique(k$SMP_LABEL))})
 	names(temp)<-c("Region","nbsamp")
 	dens<-join(dens,temp)
 	ldens[[i]]<-cbind(Group=unlist(strsplit(group,"\\."))[1],Month=unlist(strsplit(group,"\\."))[2],dens,stringsAsFactors=FALSE)
-	grid$val<-dens$Estimates[match(grid$id,dens$Region)]
-	grid$u<-dens$"95% Upper"[match(grid$id,dens$Region)]
-	grid$l<-dens$"95% Lower"[match(grid$id,dens$Region)]
+	grid$val<-dens$Estimates[match(grid$id,dens$Stratum)]
+	grid$u<-dens$"95% Upper"[match(grid$id,dens$Stratum)]
+	grid$l<-dens$"95% Lower"[match(grid$id,dens$Stratum)]
 	grid$u<-ifelse(grid$u>(2*max(grid$val,na.rm=TRUE)),2*max(grid$val,na.rm=TRUE),grid$u)
-	grid$cv<-dens$"% of var."[match(grid$id,dens$Region)]
+	grid$cv<-dens$"% of var."[match(grid$id,dens$Stratum)]
 	grid$diff<-grid$u-grid$l
 	count<-ddply(dl[[group]],.(cell),function(i){round(sum(as.numeric(i$Count),na.rm=TRUE)/sum(i$WatchLenKm[!duplicated(i$WatchID)],na.rm=TRUE),1)})
 	count<-ddply(dl[[group]],.(cell),function(i){sum(as.numeric(i$Count),na.rm=TRUE)})
 	count<-ddply(dl[[group]],.(cell),function(i){paste(sum(as.numeric(i$Count),na.rm=TRUE),round(sum(i$WatchLenKm[!duplicated(i$WatchID)],na.rm=TRUE),0),collapse="\n")})
 	grid$count<-count$V1[match(grid$id,count$cell)]
-	grid$nbsamp<-dens$"nbsamp"[match(grid$id,dens$Region)]
+	grid$nbsamp<-dens$"nbsamp"[match(grid$id,dens$Stratum)]
 	
 	r<-range(c(grid$val),na.rm=TRUE)
 	
