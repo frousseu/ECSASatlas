@@ -273,6 +273,8 @@ mg<-mcds.wrap(ds,
     pathMCDS=pathMCDS
 )
 
+mg<-lapply(mg,keep.best.model)
+
 lapply(names(mg),function(i){
  	m<-mg[[i]]
 	 name<-i
@@ -396,7 +398,7 @@ names(ml)<-names(dl)
 
 #ALSP.08091011 ne run pas pour une raison obscure
 
-for(i in seq_along(dl)){
+for(i in seq_along(dl)[3]){
   
    x<-dl[[i]]
    #x<-x[x$SMP_LABEL%in%sample(unique(x$SMP_LABEL),100),]
@@ -440,7 +442,7 @@ for(i in seq_along(dl)){
 
 ##############################################################
 ### SAVE AN IMAGE AT THIS POINT FOR USE IN THE ATLAS PDF
-#save.image(paste0(pathMAPSRData,"/ECSASmaps2.RData"))
+#sve.image(paste0(pathMAPSRData,"/ECSASmaps2.RData"))
 #load(paste0(pathMAPSRData,"/ECSASmaps2.RData"))
 ##############################################################
 
