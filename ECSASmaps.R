@@ -398,7 +398,7 @@ names(ml)<-names(dl)
 
 #ALSP.08091011 ne run pas pour une raison obscure
 
-for(i in seq_along(dl)[3]){
+for(i in seq_along(dl)){
   
    x<-dl[[i]]
    #x<-x[x$SMP_LABEL%in%sample(unique(x$SMP_LABEL),100),]
@@ -507,7 +507,7 @@ ma<-50*ceiling(ma/50)
 brcv<-c(0,25,50,100,ma)#CV scale
 monthNB<-list(c(12,1:3),4:7,8:11)
 lgroup<-names(ml)
-lgroup<-c("DOVE.08091011")
+lgroup<-c("DOVE.08091011","BLKI.08091011")
 ldens<-vector(mode="list",length(lgroup))
 names(ldens)<-lgroup
 i<-1
@@ -516,9 +516,10 @@ for(i in seq_along(lgroup)){
 	
 	group<-lgroup[i]
 	
-	png(paste0(pathMAPS,"/",gsub("\\.","_",group),"_2.png"),width=6,height=4.8,units="in",res=600)
+	png(paste0(pathMAPS,"/",gsub("\\.","_",group),"_4.png"),width=6,height=4.8,units="in",res=600)
 	
 	dens<-ml[[group]]$density_estimate$Stratum
+	dens<-dens[dens$Parameters=="D",]
 	dat<-dl[[group]]
 	temp<-ddply(dat,.(cell),function(k){length(unique(k$SMP_LABEL))})
 	names(temp)<-c("Region","nbsamp")
