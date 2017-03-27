@@ -165,7 +165,6 @@ grid<-hexgrid(dproj,width=100000,convex=FALSE,seed=111)
 grid2<-hexgrid(bbox2pol(dproj),width=100000,convex=FALSE,seed=111) # a second "complete" grid to find out where are unvisited cells
 grid$id<-paste0("g",grid$id)
 
-
 ### GET DATA THAT IS IN CELLS ---------------------------
 dshp<-SpatialPointsDataFrame(SpatialPoints(matrix(c(d$LongStart,d$LatStart),ncol=2),CRS(ll)),data=d)
 o<-over(spTransform(dshp,CRS(proj4string(grid))),grid)
@@ -508,7 +507,7 @@ ma<-50*ceiling(ma/50)
 brcv<-c(0,25,50,100,ma)#CV scale
 monthNB<-list(c(12,1:3),4:7,8:11)
 lgroup<-names(ml)
-lgroup<-c("DOVE.08091011","BLKI.08091011")
+#lgroup<-c("DOVE.08091011","BLKI.08091011")
 ldens<-vector(mode="list",length(lgroup))
 names(ldens)<-lgroup
 i<-1
@@ -705,7 +704,7 @@ for(i in seq_along(lgroup)){
 	gg<-unlist(strsplit(group,"\\."))
 	if(nchar(gg[1])==4){
 		span<-d$English[match(gg[1],d$Alpha)]
-		splat<-as.character(d$Latin[match(gg[1],d$Alpha)])
+		splat<-as.character(sort(unique(d$Latin[which(d$Alpha==gg[1])])))[1]
 		spfr<-d$French[match(gg[1],d$Alpha)]
 	}else{
 		span<-unname(groupn[[match(gg[1],names(groupn))]][1])
@@ -1022,7 +1021,7 @@ eg<-expand.grid(cell=unique(grid$id),MonthC=unique(d$MonthC),stringsAsFactors=FA
 x<-left_join(eg,d)
 
 ### éliminer les sp
-g<-ddply(x,.(cell,MonthC),function(i){
+gg<-ddply(x,.(cell,MonthC),function(i){
 	nbspecies<-length(na.omit(unique(i$Alpha))) #éliminer les sp, UN, ALCI, espèces terrestres
 	nbind<-sum(as.numeric(i$Count),na.rm=TRUE)
 	nbobs<-sum(as.numeric(i$Count)>0,na.rm=TRUE)
@@ -1030,16 +1029,8 @@ g<-ddply(x,.(cell,MonthC),function(i){
 	nbsamples<-length(na.omit(unique(i$SMP_LABEL)))
 	nbkm<-sum(i$SMP_EFFORT[!duplicated(i$SMP_LABEL)],na.rm=TRUE)
 	nbcruiseID<-length(na.omit(unique(i$CruiseID)))
-	nbships<-length(na.omit(unique(i$PlatformName)))
-	data.frame(cell=i$cell[1],MonthC=i$MonthC[1],nbspecies,nbobs,nbind,nbsamples,nbkm,nbships,nbcruiseID,nbdays)
-})
-
-
-
-g<-ddply(s,.(cell,MonthC),function(i){
-	effort<-sum(i$SMP_EFFORT)
-	nbdays<-nrow(i)
-	data.frame(cell=i$cell[1],MonthC=i$MonthC[1],effort,nbdays)
+	#nbships<-length(na.omit(unique(i$PlatformName)))
+	data.frame(cell=i$cell[1],MonthC=i$MonthC[1],nbspecies,nbobs,nbind,nbsamples,nbkm,nbcruiseID,nbdays)
 })
 
 
@@ -1050,11 +1041,11 @@ g<-ddply(s,.(cell,MonthC),function(i){
 
 write.xlsx(opendata,paste0(pathMAPSRData,"/open_data.xlsx"),row.names=FALSE,col.names=TRUE,sheetName="Densities",showNA=FALSE)
 
-write.xlsx(g,paste0(pathMAPSRData,"/open_data.xlsx"),row.names=FALSE,col.names=TRUE,sheetName="Effort",append=TRUE,showNA=FALSE)
+write.xlsx(gg,paste0(pathMAPSRData,"/open_data.xlsx"),row.names=FALSE,col.names=TRUE,sheetName="Effort",append=TRUE,showNA=FALSE)
 
 writeOGR(grid[,"id"],dsn=pathMAPSRData,layer="atlas_grid",driver="ESRI Shapefile")
 
 zip(paste0(pathMAPSRData,"/atlas_images"),list.files(pathMAPS,full.names=TRUE,pattern=".png")[1:2])
 
-
+zip(paste0(pathMAPSRData,"/atlas_models"),list.files(pathMODELS,full.names=TRUE,pattern=".pdf")[1:2])
 
