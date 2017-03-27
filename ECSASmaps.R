@@ -56,6 +56,7 @@ spname<-read.csv(text=spname,header=TRUE,stringsAsFactors=FALSE)
 ### get ECSAS database
 ecsas<-ECSAS.extract(lat=c(39.33489,74.65058),long=c(-90.50775,-38.75887),sub.program=c("Atlantic","Quebec"),ecsas.drive=pathECSAS,ecsas.file=fileECSAS,distMeth=c(14,20))
 ecsas$English<-as.character(ecsas$English)
+ecsas<-ecsas[ecsas$Quebec==0,] # scraps all QC data and take only what is in SOMEC and on the computer (typeSaisie="ordi")
 
 ### path pour MCDS.exe
 pathMCDS<-"C:/Users/User/Documents/SCF2016_FR" #path pour MCDS.exe
@@ -100,7 +101,7 @@ reg_atl<-spTransform(reg_atl,CRS(laea))
 
 
 ### EXTRACT DATA FROM SOMEC THAT IS NOT IN ECSAS YET
-addQC<-SOMEC2ECSAS(input=paste0(pathSOMEC,"/SOMEC - CopieMOD31012017_clean.accdb"),output=paste0(pathSOMEC,"/ECSASexport.csv"),date="2011-01-01",step="5 min",spNA=FALSE)
+addQC<-SOMEC2ECSAS(input=paste0(pathSOMEC,"/SOMEC - CopieMOD31012017_clean.accdb"),typeSaisie="ordi",output=paste0(pathSOMEC,"/ECSASexport.csv"),date="1011-01-01",step="5 min",spNA=FALSE)
 names(addQC)<-gsub("Orig","",names(addQC))
 # For now, elements without WatchID are scrapped, it may be due to a bug in the SOMEC2ECSAS function or missing data in the original files. Check for that and add a comment in the TODO list of ECSASconnect
 addQC<-addQC[!is.na(addQC$WatchID),]
