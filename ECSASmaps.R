@@ -517,7 +517,7 @@ for(i in seq_along(lgroup)){
 	
 	group<-lgroup[i]
 	
-	png(paste0(pathMAPS,"/",gsub("\\.","_",group),"_4.png"),width=6,height=4.8,units="in",res=600)
+	png(paste0(pathMAPS,"/",gsub("\\.","_",group),"_5.png"),width=6,height=4.8,units="in",res=600)
 	
 	dens<-ml[[group]]$density_estimate$Stratum
 	dens<-dens[dens$Parameters=="D",]
@@ -830,7 +830,7 @@ ss$nbdays<-ifelse(is.na(ss$nbdays),0,ss$nbdays)
 
 for(i in seq_along(month_comb)){
 	
-	png(paste0(pathMAPS,"/",paste0("season_",month_comb[i]),".png"),width=6,height=4.8,units="in",res=600)
+	png(paste0(pathMAPS,"/",paste0("season_",month_comb[i]),"_2.png"),width=6,height=4.8,units="in",res=600)
 	
 	x<-ss[ss$MonthC==month_comb[i],]
 	
@@ -979,7 +979,7 @@ for(i in seq_along(month_comb)){
 	
 	### LATITUDES numbers
 	text(xxlat,yylat[-1],paste0(selat[-1],"°N"),xpd=TRUE,cex=tex*0.5,adj=c(-0.15,-1))
-	text(xxlon[-1],yylon,gsub("-","",paste0(selon[-1],"°W")),xpd=TRUE,cex=tex*0.5,adj=c(-0.15,-1.25))
+	text(xxlon[-1]-150000,yylon-120000,gsub("-","",paste0(selon[-1],"°W")),xpd=TRUE,cex=tex*0.5,adj=c(-0.15,-1.25))
 	
 	off<-50000
 	lines(sca[1,],rep(sca[2,1],2)-off,lwd=1)
@@ -987,10 +987,11 @@ for(i in seq_along(month_comb)){
 	lines(rep(sca[1,2],2),sca[2,1]-off+c(-10000,10000),lwd=1)
 	text(((sca[1,2]-sca[1,1])/2)+sca[1,1],sca[2,1]-off-40000,paste((sca[1,2]-sca[1,1])/1000,"km"),adj=c(0.5,0.5),cex=tex*0.5)
 	
-	rect(-60001100000,-70000000000,6000000000,-1290000,col=alpha("white",0.4),border=NA)
+	rect(par("usr")[2]-400000,-1000000000000,1000000000000,par("usr")[3]+70000,col=alpha("white",0.4),border=NA)
+	text(par("usr")[2],-1370000,Sys.time(),cex=tex*0.4,adj=c(1.1,0.5))
 	#rect(-60001100000,2960000,6000000000,3000000000,col=alpha("white",0.4),border=NA)
-	text(par("usr")[1],-1320000,"Predicted densities are derived from distance sampling models using Distance 6.0 and the GeoAviR R package with the Eastern Canadian Seabirds-at-Sea database. The sample size corresponds to the number of cruiseID/date/cell combinations.",cex=tex*0.4,adj=c(-0.01,0.5))
-	text(par("usr")[1],-1370000,"Ces densités proviennent de modèles d'échantillonnage par distance basés sur Distance 6.0 et le package R GeoAviR et utilisant les données du Suivi des oiseaux en mer de l'est du Canada. La taille d'échantillon correspond au nombre de combinaisons croisière/date/cellule.",cex=tex*0.4,adj=c(-0.01,0.5))
+	#text(par("usr")[1],-1320000,"Predicted densities are derived from distance sampling models using Distance 6.0 and the GeoAviR R package with the Eastern Canadian Seabirds-at-Sea database. The sample size corresponds to the number of cruiseID/date/cell combinations.",cex=tex*0.4,adj=c(-0.01,0.5))
+	#text(par("usr")[1],-1370000,"Ces densités proviennent de modèles d'échantillonnage par distance basés sur Distance 6.0 et le package R GeoAviR et utilisant les données du Suivi des oiseaux en mer de l'est du Canada. La taille d'échantillon correspond au nombre de combinaisons croisière/date/cellule.",cex=tex*0.4,adj=c(-0.01,0.5))
 	
 	# PLOT EC LOGOS
 	logo1<-readJPEG(paste0(pathMAPSRData,"/ECCC_FIP_FRA_COUL.jpg"),native=TRUE)
