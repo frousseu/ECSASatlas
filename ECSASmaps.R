@@ -442,7 +442,7 @@ for(i in seq_along(dl)){
 
 ##############################################################
 ### SAVE AN IMAGE AT THIS POINT FOR USE IN THE ATLAS PDF
-#sve.image(paste0(pathMAPSRData,"/ECSASmaps2.RData"))
+#save.image(paste0(pathMAPSRData,"/ECSASmaps2.RData"))
 #load(paste0(pathMAPSRData,"/ECSASmaps2.RData"))
 ##############################################################
 
@@ -512,7 +512,7 @@ ldens<-vector(mode="list",length(lgroup))
 names(ldens)<-lgroup
 i<-1
 
-for(i in seq_along(lgroup)){
+for(i in seq_along(lgroup)[74]){
 	
 	group<-lgroup[i]
 	
@@ -662,6 +662,9 @@ for(i in seq_along(lgroup)){
 	
 	### PLOT DENSITY LEGEND
 	se<-paste(format(round(br[-length(br)],1),nsmall=1,digits=0),format(round(br[-1],1),nsmall=1,digits=0),sep=" - ")
+	if(any(duplicated(se))){
+		 se<-paste(format(round(br[-length(br)],2),nsmall=1,digits=1),format(round(br[-1],2),nsmall=1,digits=1),sep=" - ")
+	}
 	lcols<-alpha(cols,trans)
 	deleg<-c("0",paste0(c(">",rep("",length(se)-1)),if(is.numeric(se)){round(se,0)}else{se}))
 	deleg<-paste(deleg,c("/ not visited (  )",rep("",length(deleg)-1)))
