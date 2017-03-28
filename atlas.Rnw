@@ -5,7 +5,7 @@
 \usepackage{array}
 \usepackage{graphicx}
 \usepackage{makeidx}
-\renewcommand{\indexname}{SPECIES INDEX}
+\renewcommand{\indexname}{INDEX}
 \DeclareGraphicsExtensions{.pdf,.png,.jpg}
 \graphicspath{{C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps/}{C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps/}}
 \newcolumntype{C}{ >{\centering\arraybackslash} m }
@@ -156,7 +156,7 @@
 	
 	#sg<-read.csv("C:/Users/User/Documents/NestingPhenologySCF/new/Species_grouping2.csv",header=T,stringsAsFactors=F)
 	
-	load("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/ECSASmaps.RData") #RData to save at the end of the map script
+	load("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/ECSASmaps2.RData") #RData to save at the end of the map script
 
 @	
 
@@ -240,7 +240,10 @@ print(tab,include.rownames=FALSE,caption.placement="top",size="\\fontsize{7pt}{7
 <<effort_maps, cache=FALSE, eval=TRUE, include=TRUE, echo=FALSE, message=FALSE, fig.height=4.5,fig.width=6.5, results='asis'>>=
 
 	x<-list.files("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps")
-	x<-x[grep("season",x)]
+	g<-grep("season",x)
+	if(any(g)){
+	  x<-x[g]
+	}
 	x2<-gsub("\\.|_|png","",x)
 	
 	#m<-order(match(substr(x,1,4),sg$Species_ID))
@@ -264,15 +267,16 @@ print(tab,include.rownames=FALSE,caption.placement="top",size="\\fontsize{7pt}{7
 
 	\clearpage
 	\section{Species Maps}
-	<<png, cache=FALSE, eval=TRUE, include=TRUE, echo=FALSE, message=FALSE, fig.height=4.5,fig.width=6.5, results='asis'>>=
-	
+	<<pngsp, cache=FALSE, eval=TRUE, include=TRUE, echo=FALSE, message=FALSE, fig.height=4.5,fig.width=6.5, results='asis'>>=
 	
 	x<-list.files("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps")
-	x<-x[-grep("season",x)]
+	x<-x[substr(x,2,2)%in%LETTERS[1:26]]
+	g<-grep("season",x)
+	if(any(g)){
+	  x<-x[-g]
+	}
 	x2<-gsub("\\.|_| |png","",x)
 	
-	#m<-order(match(substr(x,1,4),sg$Species_ID))
-	#x<-x[m]
 	pos<-1
 	for(i in seq_along(x)){  
 	#if(pos%%2==1 && i>1){
@@ -287,16 +291,33 @@ print(tab,include.rownames=FALSE,caption.placement="top",size="\\fontsize{7pt}{7
 	pos<-pos+1
 	}
 	
-
-	#x<-list.files("M:/rapport_technique/figures_tableaux/species_account/")
-	#x<-x[grep(2,x)]
-	#for(i in seq_along(x)[1:40]){
-	# par(mar=c(0,0,0,0),mgp=c(0,0,0))
-	# plot(1,1,type="n",bty="n",xaxt="n",yaxt="n",bty="n",xlab="",ylab="")
-	# ima<-readPNG(paste0("M:/rapport_technique/figures_tableaux/species_account/",x[i]))
-	# lim <- par()
-	# rasterImage(ima,xleft=lim$usr[1]-0.0,ybottom=lim$usr[3]-0.0,xright=lim$usr[2]-0.0,ytop=lim$usr[4]+0.0)
+	@
+	
+	\clearpage
+	\section{Group Maps}	
+		<<pnggroup, cache=FALSE, eval=TRUE, include=TRUE, echo=FALSE, message=FALSE, fig.height=4.5,fig.width=6.5, results='asis'>>=
+	
+	x<-list.files("C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps")
+	x<-x[substr(x,2,2)%in%letters[1:26]]
+	g<-grep("season",x)
+	if(any(g)){
+	  x<-x[-g]
+	}
+	x2<-gsub("\\.|_| |png","",x)
+	
+	pos<-1
+	for(i in seq_along(x)){  
+	#if(pos%%2==1 && i>1){
+	#  cat("\\vspace{-0.1cm}\n")    
 	#}
+	cat(paste0("\\subsubsection*{",x2[i],"}\n"))
+	cat(paste0("\\addcontentsline{toc}{subsubsection}{",x2[i],"}\n"))
+	cat("\\vspace{-1.3cm}\n")
+	cat(paste0("\\label{",x2[i],"}\n"))
+	cat(paste0("\\index{",x2[i],"}\n")) 
+	cat(paste0("\\includegraphics[width=\\textwidth, scale=1, trim=0 0 0 0, clip]{C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps/",gsub(".png","",x[i]),"}\n"))  
+	pos<-pos+1
+	}
 	
 	@
 	
