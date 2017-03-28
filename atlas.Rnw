@@ -287,8 +287,7 @@ print(tab,include.rownames=FALSE,caption.placement="top",size="\\fontsize{7pt}{7
 	pos<-pos+1
 	}
 	
-	
-	
+
 	#x<-list.files("M:/rapport_technique/figures_tableaux/species_account/")
 	#x<-x[grep(2,x)]
 	#for(i in seq_along(x)[1:40]){
