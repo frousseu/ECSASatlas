@@ -442,7 +442,7 @@ for(i in seq_along(dl)){
 
 ##############################################################
 ### SAVE AN IMAGE AT THIS POINT FOR USE IN THE ATLAS PDF
-#save.image(paste0(pathMAPSRData,"/ECSASmaps2.RData"))
+#sve.image(paste0(pathMAPSRData,"/ECSASmaps2.RData"))
 #load(paste0(pathMAPSRData,"/ECSASmaps2.RData"))
 ##############################################################
 
@@ -512,11 +512,11 @@ ldens<-vector(mode="list",length(lgroup))
 names(ldens)<-lgroup
 i<-1
 
-for(i in seq_along(lgroup)[74]){
+for(i in seq_along(lgroup)){
 	
 	group<-lgroup[i]
 	
-	png(paste0(pathMAPS,"/",gsub("\\.","_",group),"_5.png"),width=6,height=4.8,units="in",res=600)
+	png(paste0(pathMAPS,"/",gsub("\\.","_",group),".png"),width=6,height=4.8,units="in",res=600)
 	
 	dens<-ml[[group]]$density_estimate$Stratum
 	dens<-dens[dens$Parameters=="D",]
@@ -662,7 +662,7 @@ for(i in seq_along(lgroup)[74]){
 	
 	### PLOT DENSITY LEGEND
 	se<-paste(format(round(br[-length(br)],1),nsmall=1,digits=0),format(round(br[-1],1),nsmall=1,digits=0),sep=" - ")
-	if(any(duplicated(se))){
+	if(any(duplicated(se)) | any(sapply(strsplit(se," - "),function(k){any(duplicated(k))}))){
 		 se<-paste(format(round(br[-length(br)],2),nsmall=1,digits=1),format(round(br[-1],2),nsmall=1,digits=1),sep=" - ")
 	}
 	lcols<-alpha(cols,trans)
@@ -832,7 +832,7 @@ ss$nbdays<-ifelse(is.na(ss$nbdays),0,ss$nbdays)
 
 for(i in seq_along(month_comb)){
 	
-	png(paste0(pathMAPS,"/",paste0("season_",month_comb[i]),"_2.png"),width=6,height=4.8,units="in",res=600)
+	png(paste0(pathMAPS,"/",paste0("season_",month_comb[i]),".png"),width=6,height=4.8,units="in",res=600)
 	
 	x<-ss[ss$MonthC==month_comb[i],]
 	
@@ -1048,7 +1048,7 @@ write.xlsx(gg,paste0(pathMAPSRData,"/open_data.xlsx"),row.names=FALSE,col.names=
 
 writeOGR(grid[,"id"],dsn=pathMAPSRData,layer="atlas_grid",driver="ESRI Shapefile")
 
-zip(paste0(pathMAPSRData,"/atlas_images"),list.files(pathMAPS,full.names=TRUE,pattern=".png")[1:2])
+zip(paste0(pathMAPSRData,"/atlas_images"),list.files(pathMAPS,full.names=TRUE,pattern=".png"))
 
-zip(paste0(pathMAPSRData,"/atlas_models"),list.files(pathMODELS,full.names=TRUE,pattern=".pdf")[1:2])
+zip(paste0(pathMAPSRData,"/atlas_models"),list.files(pathMODELS,full.names=TRUE,pattern=".pdf"))
 
