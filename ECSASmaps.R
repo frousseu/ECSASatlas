@@ -144,7 +144,7 @@ d$Distance<-ifelse(is.na(m),d$Distance,dn[m])
 d<-d[which(d$LongStart>(-150) & d$LongStart<(-18)),] ### j'enlève la croisière partant vers l'uerope car créer des distortions dans les projections
 d<-d[which(d$LatStart>(0) & d$LatStart<(90)),]
 #d<-d[which(d$InTransect%in%c(-1)),] les transects vides ont des NA
-d<-mcds.filter(d,distance.labels=c(25,75,150,250))
+d<-mcds.filter(d,distance.labels=c(25,75,150,250),distance.midpoints=c(25,75,150,250))
 d<-d[order(d$CruiseID,d$WatchID,d$Date,substr(d$StartTime,12,19)),]
 d$Month<-substr(d$Date,6,7)
 month_comb<-c("12010203","04050607","08091011")
