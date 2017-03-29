@@ -1047,6 +1047,7 @@ write.xlsx(opendata,paste0(pathMAPSRData,"/open_data.xlsx"),row.names=FALSE,col.
 write.xlsx(gg,paste0(pathMAPSRData,"/open_data.xlsx"),row.names=FALSE,col.names=TRUE,sheetName="Effort",append=TRUE,showNA=FALSE)
 
 writeOGR(grid[,"id"],dsn=pathMAPSRData,layer="atlas_grid",driver="ESRI Shapefile")
+writeOGR(grid2,dsn=pathMAPSRData,layer="atlas_grid2",driver="ESRI Shapefile")
 
 zip(paste0(pathMAPSRData,"/atlas_images"),list.files(pathMAPS,full.names=TRUE,pattern=".png"))
 
