@@ -44,6 +44,8 @@ pathMAPSRData<-"C:/Users/user/Documents/SCF2016_FR/ECSASatlas"
 pathMAPS<-"C:/Users/User/Documents/SCF2016_FR/ECSASatlas/maps"
 
 
+source("printPlot.R",encoding = "UTF-8")
+
 ### get groups from github
 groups<-getURL("https://raw.githubusercontent.com/frousseu/NEECbirds/master/bird_groups.csv") # Ce fichier est sur mon github
 groups<-read.csv(text=groups,header=TRUE,stringsAsFactors=FALSE)
@@ -1006,6 +1008,132 @@ for(i in seq_along(month_comb)){
 	dev.off()
 	
 }
+
+###########################################
+### PRODUCE ATLAS FOR ALL GROUPS
+###########################################
+
+groupList <-
+  list(
+    Terns = c("All Terns", "Toutes les sternes"),
+    Shearwaters = c("All Shearwaters", "Tous les puffins"),
+    "Storm-Petrels" = c("All Storm-Petrels", "Toutes les océanites"),
+    Phalaropes = c("All Phalaropes", "Tous les phalaropes"),
+    Jaegers = c("All Jaegers", "Tous les petits labbes"),
+    Skuas = c("All Skuas", "Tous les grands labbes"),
+    Alcids = c("All Alcids", "Tous les alcidés"),
+    Gulls = c("All Gulls", "Tous les goélands et mouettes"),
+    Murres = c("All Murres", "Guillemot marmette et marmettes")
+  )
+
+
+groupn <-
+  list(
+    c("All birds", "Tous les oiseaux"),
+    c("All birds", "Tous les oiseaux"),
+    c("All birds", "Tous les oiseaux")
+  )
+names(groupn) <- month_comb
+
+hex <- grid[1,] #this will be used for the legend
+row.names(hex@data) <-
+  sapply(slot(hex, "polygons"), function(x) {
+    slot(x, "ID")
+  })
+
+cols <-
+  rev(c("darkred", colo.scale(seq(0, 1, length.out = 3), c("red", "white"))))
+trans <- 0.65
+mag <- 1
+tex <- 0.6
+ma <-
+  max(unlist(lapply(ml, function(i) {
+    i$density_estimate$Stratum$"% of var."
+  }))
+  , na.rm = TRUE)
+ma <- 50 * ceiling(ma / 50)
+brcv <- c(0, 25, 50, 100, ma)#CV scale
+monthNB <- list(c(12, 1:3), 4:7, 8:11)
+
+
+# Get list of groups concerned
+lgroup <- NULL
+for (s in month_comb) {
+  lgroup <- c(lgroup, paste(names(groupList), s, sep = "."))
+}
+
+## Get data associated to this list and combine it
+dgroup <- vector(mode = "list", length(lgroup))
+names(dgroup) <- lgroup
+for (group in lgroup) {
+  dgroup[[group]] <- dl[[group]]
+}
+dg <- rbindlist(dgroup)
+
+# Get data for each season for all groups
+dlg <- vector(mode = "list", length = length(month_comb))
+names(dlg) <- month_comb
+for (month in month_comb) {
+  dlg[[month]] <- dg[MonthC == month]
+}
+
+
+ldens <- vector(mode = "list", length(lgroup))
+names(ldens) <- lgroup
+i <- 2
+
+for (i in seq_along(lgroup)) {
+  group <- lgroup[i]
+  
+  model <- ml[[group]] 
+  
+  if (is.null(model)) {
+    print(sprintf("NULL model for group: %s", group))
+    next
+  }
+  
+  dens <- ml[[group]]$density_estimate$Stratum
+  dens <- dens[dens$Parameters=="D",]
+  dat <- dl[[group]]
+  temp <- ddply(dat, .(cell), function(k) {
+    length(unique(k$SMP_LABEL))
+  })
+  names(temp) <- c("Region", "nbsamp")
+  names(dens)[names(dens) == "Stratum"] <- "Region"
+  dens <- join(dens, temp, by = "Region")
+  
+  ldens[[group]] <-
+    cbind(
+      Group = unlist(strsplit(group, "\\."))[1],
+      Month = unlist(strsplit(group, "\\."))[2],
+      dens,
+      stringsAsFactors = FALSE
+    )
+}
+dtdens <- rbindlist(ldens)
+
+
+dtdens[, var := SE^2]
+
+ddens <- dtdens[, .(
+  Group = "All",
+  var = sum(var, na.rm = TRUE),
+  cv = NA,
+  Estimates = sum(Estimates),
+  SE = sum(SE, na.rm = TRUE),
+  nbsamp = (sum(nbsamp))
+), by = list(Month, Region)]
+
+ddens[, std := sqrt(var)]
+# ddens[, se2 := std/sqrt(nbsamp)]
+# ddens[, mean := Estimates/nbsamp]
+ddens[, cv := SE/Estimates * 100]
+
+# dl <- dlg
+# densities <- dtdens2
+
+print_atlas(ddens, dlg)
+
 
 
 ###########################################
